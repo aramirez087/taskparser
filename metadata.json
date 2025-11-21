@@ -1,0 +1,5 @@
+{
+  "name": "TaskParser",
+  "description": "A futuristic, high-performance visualizer for complex JSON task structures, featuring dependency graph visualization, timeline parsing, and a glassmorphic UI.",
+  "requestFramePermissions": []
+}
