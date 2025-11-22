@@ -18,7 +18,20 @@ export const PremiumStats: React.FC<PremiumStatsProps> = ({ data }) => {
         highPriority: allTasks.filter(t => t.priority === 'high' || t.priority === 'critical').length,
     };
 
-    const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+    // Overall completion should mirror the per-task progress logic used in TaskCard:
+    // - If a task has subtasks, use % of done subtasks
+    // - Otherwise, treat a done task as 100%, anything else as 0%
+    const completionRate = stats.total > 0
+        ? Math.round(
+            allTasks.reduce((sum, task) => {
+                if (task.subtasks && task.subtasks.length > 0) {
+                    const doneSubtasks = task.subtasks.filter(s => s.status === 'done').length;
+                    return sum + (doneSubtasks / task.subtasks.length) * 100;
+                }
+                return sum + (task.status === 'done' ? 100 : 0);
+            }, 0) / stats.total
+        )
+        : 0;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -87,11 +100,17 @@ const StatCard: React.FC<StatCardProps> = ({
     showProgress = false,
     progressValue = 0
 }) => {
-    const numericValue = typeof value === 'number' ? value : parseInt(value) || 0;
-    const [displayValue, setDisplayValue] = useState(numericValue);
+    const getNumericValue = (val: number | string): number => {
+        if (typeof val === 'number') return val;
+        const parsed = parseInt(val.toString().replace('%', ''));
+        return isNaN(parsed) ? 0 : parsed;
+    };
+
+    const targetValue = getNumericValue(value);
+    const [displayValue, setDisplayValue] = useState(targetValue);
     const [isInView, setIsInView] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
-    const prevValueRef = useRef<number>(numericValue);
+    const prevTargetRef = useRef(targetValue);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -111,38 +130,37 @@ const StatCard: React.FC<StatCardProps> = ({
     }, []);
 
     useEffect(() => {
-        const targetValue = typeof value === 'number' ? value : parseInt(value);
-        if (isNaN(targetValue)) return;
+        // If value hasn't changed, skip
+        if (targetValue === prevTargetRef.current) return;
         
-        // Skip animation if value hasn't changed
-        if (targetValue === prevValueRef.current) return;
+        prevTargetRef.current = targetValue;
 
         // If not in view yet, just set the value directly
         if (!isInView) {
             setDisplayValue(targetValue);
-            prevValueRef.current = targetValue;
             return;
         }
 
-        const startValue = prevValueRef.current;
-        const duration = 1000;
-        const steps = 50;
-        const increment = (targetValue - startValue) / steps;
+        // Animate from current displayValue to targetValue
+        const startValue = displayValue;
+        const diff = targetValue - startValue;
+        const duration = 800;
+        const steps = 40;
+        const stepValue = diff / steps;
         let currentStep = 0;
 
         const timer = setInterval(() => {
             currentStep++;
             if (currentStep >= steps) {
                 setDisplayValue(targetValue);
-                prevValueRef.current = targetValue;
                 clearInterval(timer);
             } else {
-                setDisplayValue(Math.floor(startValue + increment * currentStep));
+                setDisplayValue(Math.round(startValue + stepValue * currentStep));
             }
         }, duration / steps);
 
         return () => clearInterval(timer);
-    }, [value, isInView]);
+    }, [targetValue, isInView, displayValue]);
 
     return (
         <motion.div
