@@ -61,6 +61,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
 
+    // PASS 1: Create all nodes first
     tasks.forEach(task => {
       // Add Main Task Node
       nodes.push({
@@ -72,7 +73,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
         priority: task.priority
       });
 
-      // Add Subtask Nodes and Hierarchy Links
+      // Add Subtask Nodes
       if (task.subtasks) {
         task.subtasks.forEach(subtask => {
           const subtaskId = `${task.id}-${subtask.id}`;
@@ -85,21 +86,49 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             status: subtask.status,
             priority: subtask.priority
           });
+        });
+      }
+    });
 
+    // PASS 2: Create all links after all nodes exist
+    tasks.forEach(task => {
+      // Add Hierarchy Links (parent task -> subtasks)
+      if (task.subtasks) {
+        task.subtasks.forEach(subtask => {
+          const subtaskId = `${task.id}-${subtask.id}`;
           links.push({
             source: task.id,
             target: subtaskId,
             type: 'hierarchy'
           });
+
+          // Handle subtask dependencies
+          if (subtask.dependencies && subtask.dependencies.length > 0) {
+            subtask.dependencies.forEach(depId => {
+              // Check if it's a task dependency or subtask dependency
+              const targetNode = nodes.find(n => {
+                // Match either task ID or subtask ID pattern
+                return n.id === depId || n.id === `${task.id}-${depId}`;
+              });
+              
+              if (targetNode) {
+                links.push({
+                  source: subtaskId,
+                  target: targetNode.id,
+                  type: 'dependency'
+                });
+              }
+            });
+          }
         });
       }
 
-      // Add Dependency Links
-      if (task.dependencies) {
+      // Add Task Dependency Links
+      if (task.dependencies && task.dependencies.length > 0) {
         task.dependencies.forEach(depId => {
-          // Ensure dependency exists in current filtered set
-          const targetExists = nodes.find(n => n.id === depId);
-          if (targetExists) {
+          // Ensure dependency exists in current node set
+          const targetNode = nodes.find(n => n.id === depId);
+          if (targetNode) {
             links.push({
               source: task.id,
               target: depId,
