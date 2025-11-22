@@ -78,12 +78,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="glass-panel rounded-xl border border-slate-800/60 hover:border-indigo-500/40 transition-all duration-500 overflow-hidden group relative"
+            className="glass-panel rounded-xl border border-slate-800/60 hover:border-indigo-500/50 transition-all duration-500 overflow-hidden relative"
             whileHover={{ y: -4, scale: 1.01 }}
         >
-            {/* Gradient border effect on hover */}
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-indigo-500/20 group-hover:via-purple-500/20 group-hover:to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
             {/* Shimmer effect for high priority */}
             {(task.priority === 'high' || task.priority === 'critical') && (
                 <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100 pointer-events-none" />
@@ -91,7 +88,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
             {/* Header / Main Row */}
             <div
-                className="p-5 cursor-pointer relative z-10 bg-gradient-to-r from-transparent via-transparent to-indigo-500/0 hover:to-indigo-500/5 transition-all duration-300"
+                className="p-5 cursor-pointer relative z-10 transition-all duration-300"
                 onClick={() => setExpanded(!expanded)}
             >
                 <div className="flex items-start gap-4">
