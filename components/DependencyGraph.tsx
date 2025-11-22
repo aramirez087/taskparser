@@ -65,7 +65,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     tasks.forEach(task => {
       // Add Main Task Node
       nodes.push({
-        id: task.id,
+        id: task.id.toString(),
         type: 'task',
         data: task,
         radius: 25 + (task.subtasks?.length || 0) * 2, // Size based on complexity
@@ -81,7 +81,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             id: subtaskId,
             type: 'subtask',
             data: subtask,
-            parentId: task.id,
+            parentId: task.id.toString(),
             radius: 12,
             status: subtask.status,
             priority: subtask.priority
@@ -97,7 +97,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
         task.subtasks.forEach(subtask => {
           const subtaskId = `${task.id}-${subtask.id}`;
           links.push({
-            source: task.id,
+            source: task.id.toString(),
             target: subtaskId,
             type: 'hierarchy'
           });
@@ -108,13 +108,13 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
               // Check if it's a task dependency or subtask dependency
               const targetNode = nodes.find(n => {
                 // Match either task ID or subtask ID pattern
-                return n.id === depId || n.id === `${task.id}-${depId}`;
+                return n.id === depId.toString() || n.id === `${task.id}-${depId}`;
               });
-              
+
               if (targetNode) {
                 links.push({
                   source: subtaskId,
-                  target: targetNode.id,
+                  target: targetNode.id.toString(),
                   type: 'dependency'
                 });
               }
@@ -127,17 +127,20 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       if (task.dependencies && task.dependencies.length > 0) {
         task.dependencies.forEach(depId => {
           // Ensure dependency exists in current node set
-          const targetNode = nodes.find(n => n.id === depId);
+          const targetNode = nodes.find(n => n.id === depId.toString());
           if (targetNode) {
             links.push({
-              source: task.id,
-              target: depId,
+              source: task.id.toString(),
+              target: depId.toString(),
               type: 'dependency'
             });
           }
         });
       }
     });
+
+    console.log('Nodes:', nodes.map(n => n.id));
+    console.log('Links:', links.map(l => ({ source: l.source, target: l.target, type: l.type })));
 
     // Clear previous SVG content
     const svg = d3.select(svgRef.current);
@@ -177,8 +180,22 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     linkGradient.append("stop").attr("offset", "100%").attr("stop-color", "#a855f7").attr("stop-opacity", 0.6);
 
     // Simulation
+    // Ensure all links reference existing node IDs before passing to forceLink
+    const nodeIdSet = new Set(nodes.map(n => n.id.toString()));
+    const safeLinks = links.filter(l => {
+      const s = (l.source as any).toString();
+      const t = (l.target as any).toString();
+      return nodeIdSet.has(s) && nodeIdSet.has(t);
+    });
+
+    if (safeLinks.length !== links.length) {
+      console.warn('Pruned invalid links from graph:',
+        links.filter(l => !safeLinks.includes(l))
+      );
+    }
+
     const simulation = d3.forceSimulation<GraphNode>(nodes)
-      .force("link", d3.forceLink<GraphNode, GraphLink>(links)
+      .force("link", d3.forceLink<GraphNode, GraphLink>(safeLinks)
         .id(d => d.id.toString())
         .distance(d => d.type === 'hierarchy' ? 60 : 150)
         .strength(d => d.type === 'hierarchy' ? 0.8 : 0.3)
@@ -203,7 +220,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     // Draw Links
     const link = g.append("g")
       .selectAll("line")
-      .data(links)
+      .data(safeLinks)
       .join("line")
       .attr("stroke", d => d.type === 'hierarchy' ? "#475569" : "url(#link-gradient)")
       .attr("stroke-width", d => d.type === 'hierarchy' ? 1 : 2)
@@ -260,26 +277,26 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       .data(links.filter(l => l.type === 'dependency'))
       .join("circle")
       .attr("class", "particle")
-      .attr("r", 2)
+      .attr("r", 1)
       .attr("fill", "#a855f7")
       .attr("opacity", 0);
 
     function animateParticles() {
-      particles.each(function(d) {
+      particles.each(function (d) {
         const el = d3.select(this);
         const pathLength = 100; // Abstract length
-        
+
         const animate = () => {
           const source = d.source as any;
           const target = d.target as any;
-          
+
           if (!source.x || !target.x) return; // Safety check
 
-          el.attr("opacity", 0.8)
+          el.attr("opacity", 0.3)
             .attr("cx", source.x)
             .attr("cy", source.y)
             .transition()
-            .duration(1000 + Math.random() * 1000)
+            .duration(2000 + Math.random() * 2000)
             .ease(d3.easeLinear)
             .attrTween("cx", () => t => {
               const sx = source.x;
@@ -293,12 +310,12 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             })
             .on("end", () => {
               el.attr("opacity", 0);
-              setTimeout(animate, Math.random() * 2000);
+              setTimeout(animate, Math.random() * 4000);
             });
         };
-        
+
         // Start with random delay
-        setTimeout(animate, Math.random() * 2000);
+        setTimeout(animate, Math.random() * 4000);
       });
     }
 
@@ -306,9 +323,9 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     setTimeout(animateParticles, 1000);
 
     // Icons / Text inside Node
-    node.each(function(d) {
+    node.each(function (d) {
       const el = d3.select(this);
-      
+
       if (d.type === 'task') {
         // Task ID
         el.append("text")
@@ -318,7 +335,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
           .attr("fill", "#fff")
           .attr("font-weight", "bold")
           .attr("font-size", "12px");
-          
+
         // Priority Indicator
         if (d.priority && (d.priority === 'high' || d.priority === 'critical')) {
           el.append("circle")
@@ -331,7 +348,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
         }
       } else {
         // Subtask Dot
-         el.append("circle")
+        el.append("circle")
           .attr("r", 4)
           .attr("fill", "#94a3b8");
       }
@@ -350,15 +367,15 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     // Interactions
     node.on("mouseover", (event, d) => {
       setHoveredNode(d);
-      
+
       // Dim all
       node.attr("opacity", 0.2);
       link.attr("opacity", 0.1);
-      
+
       // Highlight connected
       const connectedNodeIds = new Set<string | number>();
       connectedNodeIds.add(d.id);
-      
+
       const connectedLinks = link.filter((l: any) => {
         if (l.source.id === d.id || l.target.id === d.id) {
           connectedNodeIds.add(l.source.id);
@@ -367,23 +384,23 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
         }
         return false;
       });
-      
+
       connectedLinks
         .attr("opacity", 1)
         .attr("stroke-width", 3);
-        
+
       node.filter(n => connectedNodeIds.has(n.id))
         .attr("opacity", 1);
     })
-    .on("mouseout", () => {
-      setHoveredNode(null);
-      node.attr("opacity", 1);
-      link.attr("opacity", 0.6).attr("stroke-width", d => d.type === 'hierarchy' ? 1 : 2);
-    })
-    .on("click", (event, d) => {
-      event.stopPropagation();
-      setSelectedNode(d);
-    });
+      .on("mouseout", () => {
+        setHoveredNode(null);
+        node.attr("opacity", 1);
+        link.attr("opacity", 0.6).attr("stroke-width", d => d.type === 'hierarchy' ? 1 : 2);
+      })
+      .on("click", (event, d) => {
+        event.stopPropagation();
+        setSelectedNode(d);
+      });
 
     svg.on("click", () => setSelectedNode(null));
 
@@ -424,11 +441,11 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
   return (
     <div ref={containerRef} className="relative w-full h-full bg-slate-950 overflow-hidden">
       <svg ref={svgRef} className="w-full h-full block cursor-move" />
-      
+
       {/* Detail Overlay */}
       <AnimatePresence>
         {selectedNode && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 300 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
@@ -439,7 +456,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
                 <span className="font-mono text-xs text-slate-500">#{selectedNode.id}</span>
                 <h3 className="text-lg font-bold text-slate-100 leading-tight mt-1">{selectedNode.data.title}</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedNode(null)}
                 className="text-slate-400 hover:text-slate-200 p-1 rounded-md hover:bg-slate-800 transition-colors"
               >
@@ -476,7 +493,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             {selectedNode.data.testStrategy && (
               <div className="mb-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                   <CheckCircle2 className="w-3 h-3" /> Test Strategy
+                  <CheckCircle2 className="w-3 h-3" /> Test Strategy
                 </h4>
                 <p className="text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800">
                   {selectedNode.data.testStrategy}
@@ -484,20 +501,20 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
               </div>
             )}
 
-             {/* Subtasks List (only for main tasks) */}
-             {selectedNode.type === 'task' && (selectedNode.data as Task).subtasks && (selectedNode.data as Task).subtasks.length > 0 && (
-               <div className="mt-4">
-                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subtasks</h4>
-                 <div className="space-y-2">
-                   {(selectedNode.data as Task).subtasks.map((sub) => (
-                     <div key={sub.id} className="flex items-start gap-2 text-sm p-2 rounded bg-slate-900/30 border border-slate-800/50">
-                       <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${sub.status === 'done' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
-                       <span className="text-slate-300">{sub.title}</span>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
+            {/* Subtasks List (only for main tasks) */}
+            {selectedNode.type === 'task' && (selectedNode.data as Task).subtasks && (selectedNode.data as Task).subtasks.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subtasks</h4>
+                <div className="space-y-2">
+                  {(selectedNode.data as Task).subtasks.map((sub) => (
+                    <div key={sub.id} className="flex items-start gap-2 text-sm p-2 rounded bg-slate-900/30 border border-slate-800/50">
+                      <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${sub.status === 'done' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
+                      <span className="text-slate-300">{sub.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -506,12 +523,12 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-sm p-4 rounded-lg border border-slate-800 shadow-xl pointer-events-none">
         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Graph Legend</h4>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-slate-300">
-           <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
-           <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
-           <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
-           <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full border border-slate-500 border-dashed"></div> Subtask</div>
-           <div className="flex items-center gap-2"><div className="h-0.5 w-4 bg-slate-500/50"></div> Dependency</div>
-           <div className="flex items-center gap-2"><div className="h-0.5 w-4 border-t border-slate-500 border-dashed"></div> Hierarchy</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full border border-slate-500 border-dashed"></div> Subtask</div>
+          <div className="flex items-center gap-2"><div className="h-0.5 w-4 bg-slate-500/50"></div> Dependency</div>
+          <div className="flex items-center gap-2"><div className="h-0.5 w-4 border-t border-slate-500 border-dashed"></div> Hierarchy</div>
         </div>
       </div>
     </div>
