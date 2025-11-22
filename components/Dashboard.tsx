@@ -6,7 +6,6 @@ import { TaskList } from './TaskList';
 import { DependencyGraph } from './DependencyGraph';
 import { TaskFilters, FilterState } from './TaskFilters';
 import { PremiumStats } from './PremiumStats';
-import { NextTaskCard } from './NextTaskCard';
 import { DependencyMetrics } from './DependencyMetrics';
 
 interface DashboardProps {
@@ -167,7 +166,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
       {/* Premium Stats Bar */}
       <div className="px-6 py-6 space-y-6">
         <PremiumStats data={data} />
-        <NextTaskCard tasks={data.master.tasks} />
         <DependencyMetrics tasks={data.master.tasks} />
       </div>
 

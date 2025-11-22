@@ -114,9 +114,10 @@ const StatCard: React.FC<StatCardProps> = ({
         const targetValue = typeof value === 'number' ? value : parseInt(value);
         if (isNaN(targetValue)) return;
 
-        const duration = 1500;
-        const steps = 60;
-        const increment = targetValue / steps;
+        const startValue = displayValue;
+        const duration = 1000;
+        const steps = 50;
+        const increment = (targetValue - startValue) / steps;
         let currentStep = 0;
 
         const timer = setInterval(() => {
@@ -125,7 +126,7 @@ const StatCard: React.FC<StatCardProps> = ({
                 setDisplayValue(targetValue);
                 clearInterval(timer);
             } else {
-                setDisplayValue(Math.floor(increment * currentStep));
+                setDisplayValue(Math.floor(startValue + increment * currentStep));
             }
         }, duration / steps);
 
