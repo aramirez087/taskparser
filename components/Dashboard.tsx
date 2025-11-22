@@ -7,6 +7,7 @@ import { DependencyGraph } from './DependencyGraph';
 import { TaskFilters, FilterState } from './TaskFilters';
 import { PremiumStats } from './PremiumStats';
 import { DependencyMetrics } from './DependencyMetrics';
+import { ThemeToggle } from './ThemeToggle';
 
 interface DashboardProps {
   data: RootData;
@@ -75,73 +76,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col bg-background text-foreground"
     >
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 glass-panel border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-50 glass-panel px-6 py-4 flex items-center justify-between border-b border-border/40">
         <div className="flex items-center gap-4">
-          <div className="bg-indigo-500/20 p-2 rounded-lg">
-            <Activity className="w-6 h-6 text-indigo-400" />
+          <div className="bg-primary/5 p-2 rounded-lg border border-primary/10">
+            <Activity className="w-5 h-5 text-primary" />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-slate-100 tracking-tight">
+              <h1 className="text-lg font-semibold text-foreground tracking-tight">
                 {data.master.metadata.description || data.master.metadata.name || "Project Overview"}
               </h1>
               {isSyncing && (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
-                  <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider">Live Sync</span>
+                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Syncing</span>
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              {data.fileName && <span className="text-slate-300 font-mono">{data.fileName}</span>}
-              <span>•</span>
-              <span>Updated: {new Date(data.master.metadata.updated).toLocaleTimeString()}</span>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {data.fileName && <span className="font-medium text-foreground/80">{data.fileName}</span>}
+              <span className="opacity-30">•</span>
+              <span>Updated {new Date(data.master.metadata.updated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex bg-slate-900/50 p-1 rounded-lg border border-slate-800">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'list'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              <List className="w-4 h-4" />
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'table'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              <TableIcon className="w-4 h-4" />
-              Table
-            </button>
-            <button
-              onClick={() => setViewMode('graph')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'graph'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              <Network className="w-4 h-4" />
-              Graph
-            </button>
+          {/* Segmented Control */}
+          <div className="flex bg-muted/50 p-1 rounded-lg border border-border/50">
+            {[
+              { id: 'list', icon: List, label: 'List' },
+              { id: 'table', icon: TableIcon, label: 'Table' },
+              { id: 'graph', icon: Network, label: 'Graph' }
+            ].map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => setViewMode(mode.id as ViewMode)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${viewMode === mode.id
+                  ? 'bg-background text-foreground shadow-sm border border-border/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  }`}
+              >
+                <mode.icon className="w-3.5 h-3.5" />
+                {mode.label}
+              </button>
+            ))}
           </div>
 
-          <button onClick={onReset} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
-            Close File
+          <div className="h-4 w-px bg-border/50 mx-2"></div>
+          <ThemeToggle />
+          
+          <button onClick={onReset} className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2">
+            Close
           </button>
         </div>
       </header>
@@ -153,10 +145,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-amber-500/10 border-b border-amber-500/20 overflow-hidden"
+            className="bg-destructive/10 border-b border-destructive/20 overflow-hidden"
           >
-            <div className="px-6 py-2 flex items-center gap-2 justify-center text-sm text-amber-400">
-              <AlertCircle className="w-4 h-4" />
+            <div className="px-6 py-2 flex items-center gap-2 justify-center text-xs font-medium text-destructive">
+              <AlertCircle className="w-3.5 h-3.5" />
               <span>{syncError}</span>
             </div>
           </motion.div>
@@ -164,13 +156,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
       </AnimatePresence>
 
       {/* Premium Stats Bar */}
-      <div className="px-6 py-6 space-y-6">
+      <div className="px-6 py-8 space-y-8 max-w-[1600px] mx-auto w-full">
         <PremiumStats data={data} />
         <DependencyMetrics tasks={data.master.tasks} />
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 px-6 pb-10 overflow-hidden flex flex-col">
+      <main className="flex-1 px-6 pb-10 overflow-hidden flex flex-col max-w-[1600px] mx-auto w-full">
         {/* Filters */}
         <TaskFilters
           filters={filters}
@@ -181,67 +173,68 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
           }}
         />
 
-        <div className="flex-1 relative">
+        <div className="flex-1 relative mt-6">
           <AnimatePresence mode="wait">
             {viewMode === 'list' ? (
               <motion.div
                 key="list"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
               >
                 <TaskList tasks={filteredTasks} />
               </motion.div>
             ) : viewMode === 'table' ? (
               <motion.div
                 key="table"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                className="glass-panel border border-slate-800 rounded-xl overflow-hidden"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="clean-card overflow-hidden bg-card"
               >
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800 bg-slate-900/50">
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Deps</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Subtasks</th>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
+                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Title</th>
+                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Priority</th>
+                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Deps</th>
+                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Subtasks</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-border/50">
                       {filteredTasks.map(task => (
-                        <tr key={task.id} className="hover:bg-slate-800/30 transition-colors group">
-                          <td className="p-4 font-mono text-sm text-slate-400">#{task.id}</td>
-                          <td className="p-4 font-medium text-slate-200">{task.title}</td>
+                        <tr key={task.id} className="hover:bg-muted/30 transition-colors group">
+                          <td className="p-4 font-mono text-xs text-muted-foreground">#{task.id}</td>
+                          <td className="p-4 font-medium text-sm text-foreground">{task.title}</td>
                           <td className="p-4">
-                            <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${task.status === 'done' ? 'bg-emerald-500/20 text-emerald-400' :
-                                task.status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
-                                  task.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400' :
-                                    task.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' :
-                                      'bg-slate-500/20 text-slate-400'
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${task.status === 'done' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400' :
+                                task.status === 'in-progress' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400' :
+                                  task.status === 'cancelled' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400' :
+                                    task.status === 'deferred' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' :
+                                      'bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400'
                               }`}>
                               {task.status}
                             </span>
                           </td>
                           <td className="p-4">
-                            <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${task.priority === 'critical' ? 'text-red-400' :
-                                task.priority === 'high' ? 'text-amber-400' :
-                                  task.priority === 'medium' ? 'text-blue-400' :
-                                    'text-slate-400'
-                              }`}>
-                              {task.priority}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-1.5 h-1.5 rounded-full ${task.priority === 'critical' ? 'bg-red-500' :
+                                task.priority === 'high' ? 'bg-amber-500' :
+                                  task.priority === 'medium' ? 'bg-blue-500' :
+                                    'bg-slate-300 dark:bg-slate-600'
+                                }`}></div>
+                              <span className="text-xs text-muted-foreground capitalize">{task.priority}</span>
+                            </div>
                           </td>
-                          <td className="p-4 text-sm text-slate-400">
+                          <td className="p-4 text-xs text-muted-foreground">
                             {task.dependencies?.length || '-'}
                           </td>
-                          <td className="p-4 text-sm text-slate-400">
+                          <td className="p-4 text-xs text-muted-foreground">
                             {task.subtasks?.length || '-'}
                           </td>
                         </tr>
@@ -253,18 +246,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
             ) : (
               <motion.div
                 key="graph"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="h-[70vh] w-full glass-panel rounded-2xl overflow-hidden border border-slate-800 relative"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="h-[70vh] w-full clean-card overflow-hidden bg-card relative"
               >
                 <DependencyGraph tasks={filteredTasks} />
-                <div className="absolute bottom-4 left-4 bg-slate-900/80 p-3 rounded-lg text-xs text-slate-400 border border-slate-800 pointer-events-none">
-                  <p className="font-semibold text-slate-300 mb-1">Graph Legend</p>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
+                <div className="absolute bottom-4 left-4 glass-panel px-3 py-2 rounded-lg border border-border/50 pointer-events-none">
+                  <p className="font-medium text-[10px] text-muted-foreground mb-2 uppercase tracking-wider">Legend</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs text-foreground"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
+                    <div className="flex items-center gap-2 text-xs text-foreground"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
+                    <div className="flex items-center gap-2 text-xs text-foreground"><div className="w-2 h-2 rounded-full bg-slate-400"></div> Pending</div>
+                  </div>
                 </div>
               </motion.div>
             )}

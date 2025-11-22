@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Task, Subtask } from '../types';
-import { X, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DependencyGraphProps {
@@ -29,25 +29,26 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
-  // Helper to determine node color based on status
+  // Apple System Colors
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'done': return '#10b981'; // emerald-500
-      case 'in-progress': return '#f59e0b'; // amber-500
-      case 'pending': return '#64748b'; // slate-500
-      case 'cancelled': return '#f43f5e'; // rose-500
-      case 'deferred': return '#a855f7'; // purple-500
-      default: return '#64748b';
+      case 'done': return '#34C759'; // System Green
+      case 'in-progress': return '#FF9500'; // System Orange
+      case 'pending': return '#8E8E93'; // System Gray
+      case 'cancelled': return '#FF3B30'; // System Red
+      case 'deferred': return '#AF52DE'; // System Purple
+      default: return '#8E8E93';
     }
   };
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'critical': return '#ef4444';
-      case 'high': return '#f59e0b';
-      case 'medium': return '#3b82f6';
-      default: return '#94a3b8';
+      case 'critical': return '#FF3B30'; // System Red
+      case 'high': return '#FF9500'; // System Orange
+      case 'medium': return '#007AFF'; // System Blue
+      default: return '#8E8E93';
     }
   };
 
@@ -73,8 +74,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
         priority: task.priority
       });
 
-      // Add Subtask Nodes
-      if (task.subtasks) {
+      // Add Subtask Nodes ONLY if expanded
+      if (task.subtasks && expandedNodeIds.has(task.id.toString())) {
         task.subtasks.forEach(subtask => {
           const subtaskId = `${task.id}-${subtask.id}`;
           nodes.push({
@@ -93,7 +94,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     // PASS 2: Create all links after all nodes exist
     tasks.forEach(task => {
       // Add Hierarchy Links (parent task -> subtasks)
-      if (task.subtasks) {
+      if (task.subtasks && expandedNodeIds.has(task.id.toString())) {
         task.subtasks.forEach(subtask => {
           const subtaskId = `${task.id}-${subtask.id}`;
           links.push({
@@ -106,6 +107,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
           if (subtask.dependencies && subtask.dependencies.length > 0) {
             subtask.dependencies.forEach(depId => {
               // Check if it's a task dependency or subtask dependency
+              // Only add link if target node exists (is visible)
               const targetNode = nodes.find(n => {
                 // Match either task ID or subtask ID pattern
                 return n.id === depId.toString() || n.id === `${task.id}-${depId}`;
@@ -139,9 +141,6 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       }
     });
 
-    console.log('Nodes:', nodes.map(n => n.id));
-    console.log('Links:', links.map(l => ({ source: l.source, target: l.target, type: l.type })));
-
     // Clear previous SVG content
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -166,7 +165,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       .attr("width", "200%")
       .attr("height", "200%");
     filter.append("feGaussianBlur")
-      .attr("stdDeviation", "3")
+      .attr("stdDeviation", "2")
       .attr("result", "coloredBlur");
     const feMerge = filter.append("feMerge");
     feMerge.append("feMergeNode").attr("in", "coloredBlur");
@@ -176,8 +175,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     const linkGradient = defs.append("linearGradient")
       .attr("id", "link-gradient")
       .attr("gradientUnits", "userSpaceOnUse");
-    linkGradient.append("stop").attr("offset", "0%").attr("stop-color", "#6366f1").attr("stop-opacity", 0.4);
-    linkGradient.append("stop").attr("offset", "100%").attr("stop-color", "#a855f7").attr("stop-opacity", 0.6);
+    linkGradient.append("stop").attr("offset", "0%").attr("stop-color", "#007AFF").attr("stop-opacity", 0.4);
+    linkGradient.append("stop").attr("offset", "100%").attr("stop-color", "#5856D6").attr("stop-opacity", 0.6);
 
     // Simulation
     // Ensure all links reference existing node IDs before passing to forceLink
@@ -187,12 +186,6 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       const t = (l.target as any).toString();
       return nodeIdSet.has(s) && nodeIdSet.has(t);
     });
-
-    if (safeLinks.length !== links.length) {
-      console.warn('Pruned invalid links from graph:',
-        links.filter(l => !safeLinks.includes(l))
-      );
-    }
 
     const simulation = d3.forceSimulation<GraphNode>(nodes)
       .force("link", d3.forceLink<GraphNode, GraphLink>(safeLinks)
@@ -215,14 +208,14 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       .attr("orient", "auto")
       .append("path")
       .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", "#64748b");
+      .attr("fill", "hsl(var(--muted-foreground))");
 
     // Draw Links
     const link = g.append("g")
       .selectAll("line")
       .data(safeLinks)
       .join("line")
-      .attr("stroke", d => d.type === 'hierarchy' ? "#475569" : "url(#link-gradient)")
+      .attr("stroke", d => d.type === 'hierarchy' ? "hsl(var(--border))" : "url(#link-gradient)")
       .attr("stroke-width", d => d.type === 'hierarchy' ? 1 : 2)
       .attr("stroke-dasharray", d => d.type === 'hierarchy' ? "3,3" : "none")
       .attr("opacity", 0.6)
@@ -250,7 +243,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     // Node Main Circle
     node.append("circle")
       .attr("r", d => d.radius)
-      .attr("fill", "#1e293b") // slate-800
+      .attr("fill", "hsl(var(--card))") // Theme-aware background
       .attr("stroke", d => getStatusColor(d.status))
       .attr("stroke-width", 2)
       .transition().duration(500);
@@ -277,14 +270,13 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       .data(links.filter(l => l.type === 'dependency'))
       .join("circle")
       .attr("class", "particle")
-      .attr("r", 1)
-      .attr("fill", "#a855f7")
+      .attr("r", 1.5)
+      .attr("fill", "#007AFF")
       .attr("opacity", 0);
 
     function animateParticles() {
       particles.each(function (d) {
         const el = d3.select(this);
-        const pathLength = 100; // Abstract length
 
         const animate = () => {
           const source = d.source as any;
@@ -292,7 +284,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
 
           if (!source.x || !target.x) return; // Safety check
 
-          el.attr("opacity", 0.3)
+          el.attr("opacity", 0.6)
             .attr("cx", source.x)
             .attr("cy", source.y)
             .transition()
@@ -332,7 +324,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
           .text(d.id)
           .attr("dy", ".35em")
           .attr("text-anchor", "middle")
-          .attr("fill", "#fff")
+          .attr("fill", "hsl(var(--foreground))") // Theme-aware text
           .attr("font-weight", "bold")
           .attr("font-size", "12px");
 
@@ -343,14 +335,14 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             .attr("cy", -d.radius * 0.707)
             .attr("r", 6)
             .attr("fill", getPriorityColor(d.priority))
-            .attr("stroke", "#1e293b")
+            .attr("stroke", "hsl(var(--card))")
             .attr("stroke-width", 2);
         }
       } else {
         // Subtask Dot
         el.append("circle")
           .attr("r", 4)
-          .attr("fill", "#94a3b8");
+          .attr("fill", "hsl(var(--muted-foreground))");
       }
     });
 
@@ -360,7 +352,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       .text(d => (d.data as Task).title.length > 15 ? (d.data as Task).title.substring(0, 15) + "..." : (d.data as Task).title)
       .attr("y", d => d.radius + 15)
       .attr("text-anchor", "middle")
-      .attr("fill", "#cbd5e1")
+      .attr("fill", "hsl(var(--muted-foreground))")
       .attr("font-size", "10px")
       .style("pointer-events", "none");
 
@@ -399,6 +391,20 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       })
       .on("click", (event, d) => {
         event.stopPropagation();
+        
+        // Toggle expansion for task nodes
+        if (d.type === 'task') {
+          setExpandedNodeIds(prev => {
+            const next = new Set(prev);
+            if (next.has(d.id.toString())) {
+              next.delete(d.id.toString());
+            } else {
+              next.add(d.id.toString());
+            }
+            return next;
+          });
+        }
+        
         setSelectedNode(d);
       });
 
@@ -436,11 +442,30 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     return () => {
       simulation.stop();
     };
-  }, [tasks]);
+  }, [tasks, expandedNodeIds]); // Re-run when expansion changes
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-slate-950 overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-full bg-card overflow-hidden">
       <svg ref={svgRef} className="w-full h-full block cursor-move" />
+
+      {/* Collapse All Button */}
+      <AnimatePresence>
+        {expandedNodeIds.size > 0 && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setExpandedNodeIds(new Set())}
+            className="absolute top-4 left-4 clean-card px-4 py-2 shadow-lg z-50 bg-background/95 backdrop-blur-xl hover:bg-muted/50 transition-colors group"
+          >
+            <div className="flex items-center gap-2">
+              <Minimize2 className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <span className="text-sm font-medium text-foreground">Collapse All</span>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Detail Overlay */}
       <AnimatePresence>
@@ -449,41 +474,41 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             initial={{ opacity: 0, x: 300 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
-            className="absolute top-4 right-4 w-80 glass-panel border border-slate-700 rounded-xl p-5 shadow-2xl z-50 max-h-[calc(100%-2rem)] overflow-y-auto"
+            className="absolute top-4 right-4 w-80 clean-card p-5 shadow-xl z-50 max-h-[calc(100%-2rem)] overflow-y-auto bg-background/95 backdrop-blur-xl"
           >
             <div className="flex justify-between items-start mb-4">
               <div>
-                <span className="font-mono text-xs text-slate-500">#{selectedNode.id}</span>
-                <h3 className="text-lg font-bold text-slate-100 leading-tight mt-1">{selectedNode.data.title}</h3>
+                <span className="font-mono text-xs text-muted-foreground">#{selectedNode.id}</span>
+                <h3 className="text-lg font-semibold text-foreground leading-tight mt-1">{selectedNode.data.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-slate-400 hover:text-slate-200 p-1 rounded-md hover:bg-slate-800 transition-colors"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="flex gap-2 mb-4">
-              <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${selectedNode.status === 'done' ? 'bg-emerald-500/20 text-emerald-400' : selectedNode.status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-500/20 text-slate-400'}`}>
+              <span className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase border ${selectedNode.status === 'done' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : selectedNode.status === 'in-progress' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-muted text-muted-foreground border-border'}`}>
                 {selectedNode.status}
               </span>
               {selectedNode.priority && (
-                <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getPriorityColor(selectedNode.priority)} bg-opacity-20 text-opacity-100`} style={{ color: getPriorityColor(selectedNode.priority), backgroundColor: `${getPriorityColor(selectedNode.priority)}33` }}>
+                <span className="px-2 py-1 rounded-full text-[10px] font-medium uppercase bg-primary/5 text-primary border border-primary/10">
                   {selectedNode.priority}
                 </span>
               )}
             </div>
 
-            <p className="text-slate-400 text-sm mb-6">{selectedNode.data.description}</p>
+            <p className="text-muted-foreground text-sm mb-6">{selectedNode.data.description}</p>
 
             {/* Details Section */}
             {selectedNode.data.details && (
               <div className="mb-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                   <ArrowRight className="w-3 h-3" /> Details
                 </h4>
-                <p className="text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                <p className="text-sm text-foreground bg-muted/30 p-3 rounded-lg border border-border/50">
                   {selectedNode.data.details}
                 </p>
               </div>
@@ -492,10 +517,10 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             {/* Test Strategy */}
             {selectedNode.data.testStrategy && (
               <div className="mb-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                   <CheckCircle2 className="w-3 h-3" /> Test Strategy
                 </h4>
-                <p className="text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                <p className="text-sm text-foreground bg-muted/30 p-3 rounded-lg border border-border/50">
                   {selectedNode.data.testStrategy}
                 </p>
               </div>
@@ -504,12 +529,12 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
             {/* Subtasks List (only for main tasks) */}
             {selectedNode.type === 'task' && (selectedNode.data as Task).subtasks && (selectedNode.data as Task).subtasks.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subtasks</h4>
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Subtasks</h4>
                 <div className="space-y-2">
                   {(selectedNode.data as Task).subtasks.map((sub) => (
-                    <div key={sub.id} className="flex items-start gap-2 text-sm p-2 rounded bg-slate-900/30 border border-slate-800/50">
-                      <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${sub.status === 'done' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
-                      <span className="text-slate-300">{sub.title}</span>
+                    <div key={sub.id} className="flex items-start gap-2 text-sm p-2 rounded bg-muted/30 border border-border/50">
+                      <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${sub.status === 'done' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      <span className="text-foreground">{sub.title}</span>
                     </div>
                   ))}
                 </div>
@@ -520,15 +545,15 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       </AnimatePresence>
 
       {/* Legend Overlay */}
-      <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-sm p-4 rounded-lg border border-slate-800 shadow-xl pointer-events-none">
-        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Graph Legend</h4>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-slate-300">
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full border border-slate-500 border-dashed"></div> Subtask</div>
-          <div className="flex items-center gap-2"><div className="h-0.5 w-4 bg-slate-500/50"></div> Dependency</div>
-          <div className="flex items-center gap-2"><div className="h-0.5 w-4 border-t border-slate-500 border-dashed"></div> Hierarchy</div>
+      <div className="absolute bottom-4 left-4 clean-card p-4 rounded-lg border border-border/50 shadow-lg pointer-events-none bg-background/90 backdrop-blur-md">
+        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Graph Legend</h4>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[#34C759]"></div> Done</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[#FF9500]"></div> In Progress</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[#8E8E93]"></div> Pending</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full border border-[#8E8E93] border-dashed"></div> Subtask</div>
+          <div className="flex items-center gap-2"><div className="h-0.5 w-4 bg-[#8E8E93]/50"></div> Dependency</div>
+          <div className="flex items-center gap-2"><div className="h-0.5 w-4 border-t border-[#8E8E93] border-dashed"></div> Hierarchy</div>
         </div>
       </div>
     </div>

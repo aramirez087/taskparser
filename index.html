@@ -11,181 +11,153 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              mono: ['JetBrains Mono', 'monospace'],
+              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'San Francisco', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
+              mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
             },
             colors: {
-              glass: {
-                100: 'rgba(255, 255, 255, 0.05)',
-                200: 'rgba(255, 255, 255, 0.1)',
-                300: 'rgba(255, 255, 255, 0.2)',
-                border: 'rgba(255, 255, 255, 0.1)',
+              border: "hsl(var(--border))",
+              input: "hsl(var(--input))",
+              ring: "hsl(var(--ring))",
+              background: "hsl(var(--background))",
+              foreground: "hsl(var(--foreground))",
+              primary: {
+                DEFAULT: "hsl(var(--primary))",
+                foreground: "hsl(var(--primary-foreground))",
               },
-              brand: {
-                primary: '#6366f1',
-                secondary: '#a855f7',
-                accent: '#ec4899',
-              }
-            }
+              secondary: {
+                DEFAULT: "hsl(var(--secondary))",
+                foreground: "hsl(var(--secondary-foreground))",
+              },
+              destructive: {
+                DEFAULT: "hsl(var(--destructive))",
+                foreground: "hsl(var(--destructive-foreground))",
+              },
+              muted: {
+                DEFAULT: "hsl(var(--muted))",
+                foreground: "hsl(var(--muted-foreground))",
+              },
+              accent: {
+                DEFAULT: "hsl(var(--accent))",
+                foreground: "hsl(var(--accent-foreground))",
+              },
+              popover: {
+                DEFAULT: "hsl(var(--popover))",
+                foreground: "hsl(var(--popover-foreground))",
+              },
+              card: {
+                DEFAULT: "hsl(var(--card))",
+                foreground: "hsl(var(--card-foreground))",
+              },
+            },
+            borderRadius: {
+              lg: "var(--radius)",
+              md: "calc(var(--radius) - 2px)",
+              sm: "calc(var(--radius) - 4px)",
+            },
           }
         }
       }
     </script>
     <style>
+      :root {
+        --background: 0 0% 98%; /* Clean Off-White */
+        --foreground: 240 10% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 240 10% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 10% 3.9%;
+        --primary: 240 5.9% 10%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 240 4.8% 95.9%;
+        --secondary-foreground: 240 5.9% 10%;
+        --muted: 240 4.8% 95.9%;
+        --muted-foreground: 240 3.8% 46.1%;
+        --accent: 240 4.8% 95.9%;
+        --accent-foreground: 240 5.9% 10%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 5.9% 90%;
+        --input: 240 5.9% 90%;
+        --ring: 240 5.9% 10%;
+        --radius: 0.75rem;
+      }
+
+      .dark {
+        --background: 240 10% 3.9%; /* Deep Charcoal */
+        --foreground: 0 0% 98%;
+        --card: 240 10% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --popover: 240 10% 3.9%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 240 5.9% 10%;
+        --secondary: 240 3.7% 15.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 240 3.7% 15.9%;
+        --muted-foreground: 240 5% 64.9%;
+        --accent: 240 3.7% 15.9%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 3.7% 15.9%;
+        --input: 240 3.7% 15.9%;
+        --ring: 240 4.9% 83.9%;
+      }
+
       body {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e293b 100%);
-        background-attachment: fixed;
-        color: #f8fafc;
-        overflow-x: hidden;
-        position: relative;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        transition: background-color 0.3s ease, color 0.3s ease;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Minimal Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: hsl(var(--muted-foreground) / 0.3);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: hsl(var(--muted-foreground) / 0.5);
+      }
+
+      /* Frosted Glass Utility */
+      .glass-panel {
+        background: hsl(var(--background) / 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid hsl(var(--border));
+      }
+
+      /* Refined Card */
+      .clean-card {
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        transition: all 0.2s ease;
       }
       
-      /* Animated background gradient mesh */
-      body::before {
-        content: '';
-        position: fixed;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: 
-          radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
-          radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
-        animation: gradientShift 20s ease infinite;
-        pointer-events: none;
-        z-index: 0;
-      }
-      
-      @keyframes gradientShift {
-        0%, 100% { transform: translate(0, 0) rotate(0deg); }
-        33% { transform: translate(5%, 5%) rotate(3deg); }
-        66% { transform: translate(-5%, 3%) rotate(-3deg); }
+      .clean-card:hover {
+        border-color: hsl(var(--primary) / 0.2);
+        box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08);
       }
       
       #root {
-        position: relative;
-        z-index: 1;
-      }
-      
-      /* Premium Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-      }
-      ::-webkit-scrollbar-track {
-        background: rgba(15, 23, 42, 0.4);
-        border-radius: 5px;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        border-radius: 5px;
-        border: 2px solid rgba(15, 23, 42, 0.4);
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
-      }
-      
-      /* Premium Glassmorphism */
-      .glass-panel {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(20px) saturate(150%);
-        -webkit-backdrop-filter: blur(20px) saturate(150%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 
-          0 8px 32px rgba(0, 0, 0, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      }
-      
-      .glass-panel-heavy {
-        background: rgba(30, 41, 59, 0.85);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 
-          0 20px 60px rgba(0, 0, 0, 0.4),
-          inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      }
-      
-      /* Animation Keyframes */
-      @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
-      }
-      
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-      }
-      
-      @keyframes pulse-glow {
-        0%, 100% { opacity: 1; box-shadow: 0 0 20px currentColor; }
-        50% { opacity: 0.5; box-shadow: 0 0 40px currentColor; }
-      }
-      
-      @keyframes slideInUp {
-        from { opacity: 0; transform: translate3d(0, 30px, 0); }
-        to { opacity: 1; transform: translate3d(0, 0, 0); }
-      }
-      
-      @keyframes fadeInScale {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-      }
-      
-      /* Utility Classes */
-      .shimmer {
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(255, 255, 255, 0.1) 50%,
-          transparent 100%
-        );
-        background-size: 1000px 100%;
-        animation: shimmer 3s infinite;
-      }
-      
-      .gradient-border {
-        position: relative;
-        border: 2px solid transparent;
-        background-clip: padding-box;
-      }
-      
-      .gradient-border::before {
-        content: '';
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
-        border-radius: inherit;
-        z-index: -1;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-      
-      .gradient-border:hover::before {
-        opacity: 1;
+        isolation: isolate;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
-    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.4.0",
-    "d3": "https://aistudiocdn.com/d3@^7.9.0"
-  }
-}
-</script>
 </head>
   <body>
     <div id="root"></div>

@@ -18,9 +18,6 @@ export const PremiumStats: React.FC<PremiumStatsProps> = ({ data }) => {
         highPriority: allTasks.filter(t => t.priority === 'high' || t.priority === 'critical').length,
     };
 
-    // Overall completion should mirror the per-task progress logic used in TaskCard:
-    // - If a task has subtasks, use % of done subtasks
-    // - Otherwise, treat a done task as 100%, anything else as 0%
     const completionRate = stats.total > 0
         ? Math.round(
             allTasks.reduce((sum, task) => {
@@ -36,39 +33,38 @@ export const PremiumStats: React.FC<PremiumStatsProps> = ({ data }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard
-                icon={<Target className="w-6 h-6" />}
+                icon={<Target className="w-4 h-4" />}
                 label="Total Tasks"
                 value={stats.total}
                 subtext={`${stats.completed} completed`}
-                gradient="from-blue-500 to-cyan-500"
+                iconColor="text-blue-500"
                 delay={0}
             />
 
             <StatCard
-                icon={<Zap className="w-6 h-6" />}
+                icon={<Zap className="w-4 h-4" />}
                 label="In Progress"
                 value={stats.inProgress}
                 subtext="Active workflows"
-                gradient="from-amber-500 to-orange-500"
+                iconColor="text-amber-500"
                 delay={0.1}
             />
 
             <StatCard
-                icon={<AlertTriangle className="w-6 h-6" />}
+                icon={<AlertTriangle className="w-4 h-4" />}
                 label="High Priority"
                 value={stats.highPriority}
                 subtext="Needs attention"
-                gradient="from-rose-500 to-pink-500"
+                iconColor="text-rose-500"
                 delay={0.2}
-                pulse={stats.highPriority > 0}
             />
 
             <StatCard
-                icon={<CheckCircle2 className="w-6 h-6" />}
+                icon={<CheckCircle2 className="w-4 h-4" />}
                 label="Completion"
                 value={`${completionRate}%`}
                 subtext="Overall progress"
-                gradient="from-emerald-500 to-teal-500"
+                iconColor="text-emerald-500"
                 delay={0.3}
                 showProgress
                 progressValue={completionRate}
@@ -82,9 +78,8 @@ interface StatCardProps {
     label: string;
     value: number | string;
     subtext: string;
-    gradient: string;
+    iconColor: string;
     delay: number;
-    pulse?: boolean;
     showProgress?: boolean;
     progressValue?: number;
 }
@@ -94,63 +89,52 @@ const StatCard: React.FC<StatCardProps> = ({
     label,
     value,
     subtext,
-    gradient,
+    iconColor,
     delay,
-    pulse = false,
     showProgress = false,
     progressValue = 0
 }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{
-                duration: 0.5,
+                duration: 0.4,
                 delay,
-                ease: [0.34, 1.56, 0.64, 1]
+                ease: [0.2, 0.65, 0.3, 0.9]
             }}
-            whileHover={{ y: -6, scale: 1.02 }}
-            className={`glass-panel rounded-xl p-6 relative overflow-hidden group cursor-default ${pulse ? 'animate-pulse-glow' : ''}`}
+            className="clean-card p-5 relative overflow-hidden group bg-card"
         >
-            {/* Animated gradient background */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-500`} />
-
-            {/* Shimmer effect on hover */}
-            <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100" />
-
-            <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-lg bg-gradient-to-br ${gradient} bg-opacity-20`}>
+            <div className="flex flex-col h-full justify-between">
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+                        <h3 className="text-2xl font-semibold text-foreground mt-1 tracking-tight">
+                            {value}
+                        </h3>
+                    </div>
+                    <div className={`p-2 rounded-md bg-muted/50 ${iconColor}`}>
                         {icon}
                     </div>
-                    <span className="text-xs font-mono text-slate-500 uppercase tracking-widest">{label}</span>
                 </div>
 
-                <div className="mt-2">
-                    <h3 className="text-4xl font-bold text-slate-100 mb-1">
-                        {value}
-                    </h3>
-                    <p className="text-sm text-slate-400">{subtext}</p>
-                </div>
-
-                {showProgress && (
-                    <div className="mt-4">
-                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progressValue}%` }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
-                                className={`h-full bg-gradient-to-r ${gradient} rounded-full relative`}
-                            >
-                                <div className="absolute inset-0 shimmer" />
-                            </motion.div>
+                <div>
+                    <p className="text-xs text-muted-foreground">{subtext}</p>
+                    
+                    {showProgress && (
+                        <div className="mt-3">
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progressValue}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    className="h-full bg-primary rounded-full"
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
-
-            {/* Glow effect */}
-            <div className={`absolute -inset-1 bg-gradient-to-r ${gradient} opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500 -z-10`} />
         </motion.div>
     );
 };
