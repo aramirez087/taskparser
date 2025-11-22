@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React from 'react';
 import { RootData } from '../types';
 import { motion } from 'framer-motion';
 import { TrendingUp, Zap, Target, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -100,71 +100,8 @@ const StatCard: React.FC<StatCardProps> = ({
     showProgress = false,
     progressValue = 0
 }) => {
-    const getNumericValue = (val: number | string): number => {
-        if (typeof val === 'number') return val;
-        const parsed = parseInt(val.toString().replace('%', ''));
-        return isNaN(parsed) ? 0 : parsed;
-    };
-
-    const targetValue = getNumericValue(value);
-    const [displayValue, setDisplayValue] = useState(targetValue);
-    const [isInView, setIsInView] = useState(false);
-    const cardRef = useRef<HTMLDivElement>(null);
-    const prevTargetRef = useRef(targetValue);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsInView(true);
-                }
-            },
-            { threshold: 0.1 }
-        );
-
-        if (cardRef.current) {
-            observer.observe(cardRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, []);
-
-    useEffect(() => {
-        // If value hasn't changed, skip
-        if (targetValue === prevTargetRef.current) return;
-        
-        prevTargetRef.current = targetValue;
-
-        // If not in view yet, just set the value directly
-        if (!isInView) {
-            setDisplayValue(targetValue);
-            return;
-        }
-
-        // Animate from current displayValue to targetValue
-        const startValue = displayValue;
-        const diff = targetValue - startValue;
-        const duration = 800;
-        const steps = 40;
-        const stepValue = diff / steps;
-        let currentStep = 0;
-
-        const timer = setInterval(() => {
-            currentStep++;
-            if (currentStep >= steps) {
-                setDisplayValue(targetValue);
-                clearInterval(timer);
-            } else {
-                setDisplayValue(Math.round(startValue + stepValue * currentStep));
-            }
-        }, duration / steps);
-
-        return () => clearInterval(timer);
-    }, [targetValue, isInView, displayValue]);
-
     return (
         <motion.div
-            ref={cardRef}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -191,9 +128,7 @@ const StatCard: React.FC<StatCardProps> = ({
 
                 <div className="mt-2">
                     <h3 className="text-4xl font-bold text-slate-100 mb-1">
-                        {typeof value === 'string' && value.includes('%')
-                            ? `${displayValue}%`
-                            : displayValue}
+                        {value}
                     </h3>
                     <p className="text-sm text-slate-400">{subtext}</p>
                 </div>
