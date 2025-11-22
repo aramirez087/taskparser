@@ -77,13 +77,10 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({ filters, onFiltersChan
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="glass-panel-heavy border border-slate-800 rounded-xl p-6 mb-6 relative overflow-hidden group"
+            className="glass-panel-heavy border border-slate-800 rounded-xl p-6 mb-6 relative overflow-hidden"
         >
             {/* Animated gradient accent */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50" />
-
-            {/* Shimmer on hover */}
-            <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100 pointer-events-none" />
 
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">

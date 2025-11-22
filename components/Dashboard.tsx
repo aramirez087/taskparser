@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { RootData, Task } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List } from 'lucide-react';
 import { TaskList } from './TaskList';
 import { DependencyGraph } from './DependencyGraph';
 import { TaskFilters, FilterState } from './TaskFilters';
 import { PremiumStats } from './PremiumStats';
+import { NextTaskCard } from './NextTaskCard';
+import { DependencyMetrics } from './DependencyMetrics';
 
 interface DashboardProps {
   data: RootData;
@@ -14,10 +16,10 @@ interface DashboardProps {
   syncError?: string | null;
 }
 
-type ViewMode = 'list' | 'graph';
+type ViewMode = 'list' | 'graph' | 'table';
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing = false, syncError }) => {
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'graph' | 'table'>('list');
   const [filters, setFilters] = useState<FilterState>({
     status: [],
     priority: [],
@@ -109,15 +111,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
           <div className="flex bg-slate-900/50 p-1 rounded-lg border border-slate-800">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'list'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
-              <LayoutDashboard className="w-4 h-4" /> List
+              <List className="w-4 h-4" />
+              List
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'table'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
+            >
+              <TableIcon className="w-4 h-4" />
+              Table
             </button>
             <button
               onClick={() => setViewMode('graph')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'graph' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'graph'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
-              <Share2 className="w-4 h-4" /> Graph
+              <Network className="w-4 h-4" />
+              Graph
             </button>
           </div>
 
@@ -145,8 +165,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
       </AnimatePresence>
 
       {/* Premium Stats Bar */}
-      <div className="px-6 py-6">
+      <div className="px-6 py-6 space-y-6">
         <PremiumStats data={data} />
+        <NextTaskCard tasks={data.master.tasks} />
+        <DependencyMetrics tasks={data.master.tasks} />
       </div>
 
       {/* Main Content Area */}
@@ -162,19 +184,93 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
         />
 
         <div className="flex-1 relative">
-          {viewMode === 'list' ? (
-            <TaskList tasks={filteredTasks} />
-          ) : (
-            <div className="h-[70vh] w-full glass-panel rounded-2xl overflow-hidden border border-slate-800 relative">
-              <DependencyGraph tasks={filteredTasks} />
-              <div className="absolute bottom-4 left-4 bg-slate-900/80 p-3 rounded-lg text-xs text-slate-400 border border-slate-800 pointer-events-none">
-                <p className="font-semibold text-slate-300 mb-1">Graph Legend</p>
-                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
-                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
-                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
-              </div>
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {viewMode === 'list' ? (
+              <motion.div
+                key="list"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <TaskList tasks={filteredTasks} />
+              </motion.div>
+            ) : viewMode === 'table' ? (
+              <motion.div
+                key="table"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="glass-panel border border-slate-800 rounded-xl overflow-hidden"
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-900/50">
+                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
+                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
+                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</th>
+                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Deps</th>
+                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Subtasks</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {filteredTasks.map(task => (
+                        <tr key={task.id} className="hover:bg-slate-800/30 transition-colors group">
+                          <td className="p-4 font-mono text-sm text-slate-400">#{task.id}</td>
+                          <td className="p-4 font-medium text-slate-200">{task.title}</td>
+                          <td className="p-4">
+                            <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${task.status === 'done' ? 'bg-emerald-500/20 text-emerald-400' :
+                                task.status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
+                                  task.status === 'cancelled' ? 'bg-rose-500/20 text-rose-400' :
+                                    task.status === 'deferred' ? 'bg-purple-500/20 text-purple-400' :
+                                      'bg-slate-500/20 text-slate-400'
+                              }`}>
+                              {task.status}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${task.priority === 'critical' ? 'text-red-400' :
+                                task.priority === 'high' ? 'text-amber-400' :
+                                  task.priority === 'medium' ? 'text-blue-400' :
+                                    'text-slate-400'
+                              }`}>
+                              {task.priority}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-slate-400">
+                            {task.dependencies?.length || '-'}
+                          </td>
+                          <td className="p-4 text-sm text-slate-400">
+                            {task.subtasks?.length || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="graph"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="h-[70vh] w-full glass-panel rounded-2xl overflow-hidden border border-slate-800 relative"
+              >
+                <DependencyGraph tasks={filteredTasks} />
+                <div className="absolute bottom-4 left-4 bg-slate-900/80 p-3 rounded-lg text-xs text-slate-400 border border-slate-800 pointer-events-none">
+                  <p className="font-semibold text-slate-300 mb-1">Graph Legend</p>
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </motion.div>
