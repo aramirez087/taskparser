@@ -56,11 +56,6 @@ export const DependencyMetrics: React.FC<DependencyMetricsProps> = ({ tasks }) =
             transition={{ delay: 0.1 }}
             className="glass-panel border border-slate-800 rounded-xl p-6 mb-6"
         >
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <GitMerge className="w-4 h-4" />
-                Dependency Intelligence
-            </h3>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                     <div className="flex items-center gap-2 mb-1 text-emerald-400">
