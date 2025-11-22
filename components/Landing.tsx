@@ -118,9 +118,9 @@ export const Landing: React.FC<LandingProps> = ({ onDataLoaded }) => {
             transition={{ delay: 0.2 }}
             className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-4 tracking-tight"
           >
-            TaskFlow Horizon
+            TaskMaster Pulse
           </motion.h1>
-          <p className="text-slate-400 text-lg">Visualize your project architecture with cinematic depth.</p>
+          <p className="text-slate-400 text-lg">Give Task Master AI a live cockpit so devs stop re-asking for task status.</p>
         </div>
 
         <div className="glass-panel rounded-2xl p-8 shadow-2xl shadow-indigo-500/10">

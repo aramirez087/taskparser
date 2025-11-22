@@ -1,60 +1,73 @@
-# TaskFlow Horizon
+# TaskMaster Pulse
 
-> Visualize complex project plans from a single JSON file, monitor live updates, and explore task dependencies through cinematic dashboards.
+> Give Task Master AI a live cockpit so developers stop re-asking their LLM for task status.
 
-TaskFlow Horizon is a Vite + React application that ingests a structured JSON “task parser” export and renders an immersive control center for program managers, tech leads, and automation agents. It pairs a polished landing/import flow with rich analytics, list views, and an interactive dependency graph powered by D3.
+TaskMaster Pulse is the status companion for [Task Master AI](https://www.task-master.dev/). Feed it the JSON export that powers your AI agent, and Pulse turns that data into a cinematic dashboard: real-time stats, dependency graphs, and drill-down histories that keep engineers, PMs, and their copilots perfectly aligned.
+
+- **Live app:** https://taskparser-iota.vercel.app/
+- **Parent project:** https://www.task-master.dev/
+
+## Why it exists
+
+Task Master AI breaks ambiguous specs into actionable tasks your AI agent can one-shot. Pulse closes the loop by exposing the agent’s execution plan to humans:
+
+1. **Developers** no longer ping their LLM for progress—Pulse shows it instantly.
+2. **PM/Agent teams** can watch dependencies, logs, and test strategies in one interface.
+3. **Automation loops** stay trustworthy because everyone sees the same canonical JSON.
 
 ## Highlights
 
-- **Instant ingestion** – drag-and-drop, paste, or open JSON files exported from your task parser pipeline.
-- **Live file sync** – leverages the File System Access API to poll changes every second and reflect edits without a manual refresh.
-- **Adaptive dashboards** – summary stats, progress bars, activity logs, and subtask drill-downs with tasteful motion.
-- **Dependency graph** – force-directed visualization showing upstream/downstream relationships and task health at a glance.
-- **Modern stack** – React 19, TypeScript, Vite, Framer Motion, Lucide icons, tailwind-merge utilities, and D3.
+1. **Instant ingestion** – drag/drop, file picker, or raw JSON paste.
+2. **File System Access live sync** – automatically refreshes the dashboard when the source JSON changes (Chrome/Edge).
+3. **Hybrid analytics** – glamorous landing, stat tiles, expandable task cards, activity timelines, and D3 dependency graph.
+4. **Task Master aware** – metadata banner echoes the agent’s description/name so context remains in sync.
+5. **Modern stack** – React 19, Vite, TypeScript, Framer Motion, Lucide, tailwind-merge, and D3.
 
 ## Requirements
 
 - Node.js 20+
 - npm 10+
-- Optional: Chrome/Edge for File System Access API live-sync support (fallback upload works everywhere).
+- Optional: Chromium-based browser for live file syncing (fallback upload works everywhere)
 
 ### Environment Variables
 
-Create a `.env.local` file to store runtime secrets. The app currently expects:
+Create `.env.local` and add:
 
 ```
 GEMINI_API_KEY="your-key"
 ```
 
-> The UI does not call Gemini directly yet, but the key is reserved for upcoming AI-assisted parsing. Keep it handy if you plan to extend the parser service.
+> Reserved for upcoming Gemini-powered parsing helpers. Not required for core visualization yet.
 
 ## Getting Started
 
-```
+```bash
 npm install
-npm run dev    # http://localhost:5173
+npm run dev        # http://localhost:5173
 
-npm run build  # generates production bundle in dist/
+npm run build      # outputs to dist/
 npm run preview
 ```
 
+Vercel deploys use the **Vite** preset (`npm run build`, output `dist/`).
+
 ## Usage Workflow
 
-1. **Open the app** – served locally via Vite; background gradients and grain overlay set the tone.
-2. **Load project data**
-   - Click **“Open File & Watch Changes”** to pick a JSON file and enable live syncing.
-   - Drag a file into the dropzone or paste raw JSON into the text editor as a fallback.
-3. **Review the dashboard**
-   - Sticky header highlights project metadata, file name, and live-sync status.
-   - Stat cards summarize totals, completion rates, high-priority counts, and in-progress work.
+1. **Launch Pulse** – local dev server or the hosted Vercel URL.
+2. **Load Task Master AI data**
+   - “Open File & Watch Changes” (recommended) enables live syncing with the JSON file driving your agent.
+   - Drag-and-drop or paste raw JSON as a fallback.
+3. **Review the cockpit**
+   - Sticky header mirrors `master.metadata`, file name, and sync status.
+   - Stat cards highlight totals, completion, SLAs, and blockers.
 4. **Explore tasks**
-   - **List mode** shows expandable task cards with details, logs, subtasks, test strategies, and dependency badges.
-   - **Graph mode** renders a draggable/zoomable force graph where color encodes status.
-5. **Stay in sync** – as long as live-sync is enabled, edits to the source JSON automatically refresh the visualization.
+   - **List mode:** motion-enhanced cards with details, logs parsed from `<info added on …>` blocks, subtasks, dependencies, and test plans.
+   - **Graph mode:** D3 force layout showing dependency health (color-coded by status) with zoom/pan.
+5. **Stay aligned** – keep the JSON open in your editor, edit freely, and Pulse will reflect updates every second.
 
 ## JSON Data Model
 
-The app expects a `RootData` shape with `master` metadata and task collections. Example:
+Pulse expects the `RootData` schema used by Task Master AI:
 
 ```jsonc
 {
@@ -88,20 +101,20 @@ The app expects a `RootData` shape with `master` metadata and task collections. 
 ### Key Interfaces (see [`types.ts`](./types.ts))
 
 - `Metadata`: created/updated timestamps plus optional display name and description.
-- `Task`: core unit with description, priority, status, dependencies, subtasks, and parsing-friendly `details` string (supports embedded `<info added on …>` blocks).
-- `Subtask`: lightweight entries inheriting dependency/test metadata when available.
+- `Task`: description, priority, status, dependencies, subtasks, and `details` string containing optional `<info added on …>` log entries.
+- `Subtask`: lightweight items inheriting the same status/priority/testStrategy fields.
 
 ## Project Structure
 
 ```
-├── App.tsx                # orchestrates landing vs dashboard states + live sync
+├── App.tsx                # switches between landing and dashboard, handles live sync polling
 ├── components/
-│   ├── Landing.tsx        # import UX: drag/drop, file picker, text paste
-│   ├── Dashboard.tsx      # stats, top bar, list/graph toggles
-│   ├── TaskList.tsx       # list view + animated cards
-│   ├── TaskCard.tsx       # expandable task details, logs, subtasks
-│   └── DependencyGraph.tsx# D3 force layout for dependencies
-├── metadata.json          # sample data file
+│   ├── Landing.tsx        # Task Master import UX (file picker, drop zone, raw JSON input)
+│   ├── Dashboard.tsx      # stats banner, list/graph toggle, sync banner
+│   ├── TaskList.tsx       # animated list wrapper
+│   ├── TaskCard.tsx       # expandable cards with logs, subtasks, dependencies
+│   └── DependencyGraph.tsx# D3 force graph for upstream/downstream mapping
+├── metadata.json          # sample dataset
 ├── types.ts               # shared TypeScript interfaces
 ├── vite.config.ts
 └── package.json
@@ -109,15 +122,15 @@ The app expects a `RootData` shape with `master` metadata and task collections. 
 
 ## Troubleshooting
 
-1. **“Invalid JSON structure. Missing 'master.tasks'.”** – Ensure your data matches the schema above; wrap tasks inside `master.tasks`.
-2. **Live sync banner shows errors** – The file changed but contains invalid JSON or browser permissions were revoked. Fix/restore access and reopen.
-3. **Graph is empty** – There must be at least one task with dependencies; otherwise the list view still works.
+1. **“Invalid JSON structure. Missing 'master.tasks'.”** – ensure tasks live under `master.tasks` with metadata filled in.
+2. **Live sync banner shows errors** – the watched file changed but JSON is invalid or file permissions were revoked; fix and reopen.
+3. **Graph view is empty** – requires at least one task, and edges appear only when dependencies reference other IDs.
 
 ## Roadmap & Ideas
 
-1. Integrate Gemini or another LLM to convert unstructured specs into the required JSON.
-2. Export annotated task reports (PDF/Markdown) for stakeholders.
-3. Multi-file sessions with tabbed dashboards.
+1. Trigger Gemini to fix malformed JSON or summarize risk hot spots.
+2. Publish shareable progress reports (PDF/Markdown) to stakeholders.
+3. Support multiple agent files with quick switching/tabs.
 
 ## License
 
