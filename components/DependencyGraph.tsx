@@ -98,7 +98,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       if (task.dependencies) {
         task.dependencies.forEach(depId => {
           // Ensure dependency exists in current filtered set
-          if (tasks.find(t => t.id === depId)) {
+          const targetExists = nodes.find(n => n.id === depId);
+          if (targetExists) {
             links.push({
               source: task.id,
               target: depId,
