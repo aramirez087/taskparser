@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle } from 'lucide-react';
 import { TaskList } from './TaskList';
 import { DependencyGraph } from './DependencyGraph';
+import { TaskFilters, FilterState } from './TaskFilters';
+import { PremiumStats } from './PremiumStats';
 
 interface DashboardProps {
   data: RootData;
@@ -16,21 +18,60 @@ type ViewMode = 'list' | 'graph';
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing = false, syncError }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  
+  const [filters, setFilters] = useState<FilterState>({
+    status: [],
+    priority: [],
+    searchQuery: '',
+    hasSubtasks: null
+  });
+
+  // Filter tasks based on current filters
+  const filteredTasks = useMemo(() => {
+    let tasks = data.master.tasks;
+
+    // Status filter
+    if (filters.status.length > 0) {
+      tasks = tasks.filter(t => filters.status.includes(t.status));
+    }
+
+    // Priority filter
+    if (filters.priority.length > 0) {
+      tasks = tasks.filter(t => filters.priority.includes(t.priority));
+    }
+
+    // Search filter
+    if (filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase();
+      tasks = tasks.filter(t =>
+        t.title.toLowerCase().includes(query) ||
+        t.description.toLowerCase().includes(query)
+      );
+    }
+
+    // Subtask filter
+    if (filters.hasSubtasks !== null) {
+      tasks = tasks.filter(t =>
+        filters.hasSubtasks ? (t.subtasks && t.subtasks.length > 0) : (!t.subtasks || t.subtasks.length === 0)
+      );
+    }
+
+    return tasks;
+  }, [data.master.tasks, filters]);
+
   const stats = useMemo(() => {
-    const allTasks = data.master.tasks;
+    const allTasks = filteredTasks;
     const total = allTasks.length;
     const completed = allTasks.filter(t => t.status === 'done').length;
     const inProgress = allTasks.filter(t => t.status === 'in-progress').length;
     const pending = allTasks.filter(t => t.status === 'pending').length;
     const highPriority = allTasks.filter(t => t.priority === 'high' || t.priority === 'critical').length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
+
     return { total, completed, inProgress, pending, highPriority, completionRate };
-  }, [data]);
+  }, [filteredTasks]);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen flex flex-col"
@@ -79,7 +120,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
               <Share2 className="w-4 h-4" /> Graph
             </button>
           </div>
-          
+
           <button onClick={onReset} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
             Close File
           </button>
@@ -89,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
       {/* Error Banner */}
       <AnimatePresence>
         {syncError && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -103,30 +144,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
         )}
       </AnimatePresence>
 
-      {/* Stats Bar */}
-      <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<FileText className="text-blue-400" />} label="Total Tasks" value={stats.total} subValue={`${stats.completed} completed`} />
-        <StatCard icon={<Clock className="text-amber-400" />} label="In Progress" value={stats.inProgress} subValue="Active Workflows" color="amber" />
-        <StatCard icon={<AlertTriangle className="text-rose-400" />} label="High Priority" value={stats.highPriority} subValue="Needs Attention" color="rose" />
-        <StatCard icon={<CheckCircle2 className="text-emerald-400" />} label="Completion" value={`${stats.completionRate}%`} subValue="Overall Progress" color="emerald" />
+      {/* Premium Stats Bar */}
+      <div className="px-6 py-6">
+        <PremiumStats data={data} />
       </div>
 
       {/* Main Content Area */}
       <main className="flex-1 px-6 pb-10 overflow-hidden flex flex-col">
+        {/* Filters */}
+        <TaskFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          taskCounts={{
+            total: data.master.tasks.length,
+            filtered: filteredTasks.length
+          }}
+        />
+
         <div className="flex-1 relative">
-            {viewMode === 'list' ? (
-                <TaskList tasks={data.master.tasks} />
-            ) : (
-                <div className="h-[70vh] w-full glass-panel rounded-2xl overflow-hidden border border-slate-800 relative">
-                   <DependencyGraph tasks={data.master.tasks} />
-                   <div className="absolute bottom-4 left-4 bg-slate-900/80 p-3 rounded-lg text-xs text-slate-400 border border-slate-800 pointer-events-none">
-                      <p className="font-semibold text-slate-300 mb-1">Graph Legend</p>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
-                   </div>
-                </div>
-            )}
+          {viewMode === 'list' ? (
+            <TaskList tasks={filteredTasks} />
+          ) : (
+            <div className="h-[70vh] w-full glass-panel rounded-2xl overflow-hidden border border-slate-800 relative">
+              <DependencyGraph tasks={filteredTasks} />
+              <div className="absolute bottom-4 left-4 bg-slate-900/80 p-3 rounded-lg text-xs text-slate-400 border border-slate-800 pointer-events-none">
+                <p className="font-semibold text-slate-300 mb-1">Graph Legend</p>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Done</div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> In Progress</div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-500"></div> Pending</div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </motion.div>

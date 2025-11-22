@@ -12,9 +12,11 @@ export interface Subtask {
   description: string;
   dependencies?: (number | string)[];
   details?: string;
-  status: 'pending' | 'in-progress' | 'done' | 'cancelled' | string;
+  status: 'pending' | 'in-progress' | 'done' | 'cancelled' | 'deferred' | string;
   testStrategy?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
+  acceptanceCriteria?: string;
+  parentTaskId?: number | string;
 }
 
 export interface Task {
@@ -25,8 +27,10 @@ export interface Task {
   testStrategy: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   dependencies: (number | string)[];
-  status: 'pending' | 'in-progress' | 'done' | 'cancelled' | string;
+  status: 'pending' | 'in-progress' | 'done' | 'cancelled' | 'deferred' | string;
   subtasks: Subtask[];
+  previousStatus?: string;
+  acceptanceCriteria?: string;
 }
 
 export interface MasterData {
