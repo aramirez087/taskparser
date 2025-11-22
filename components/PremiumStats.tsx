@@ -87,9 +87,11 @@ const StatCard: React.FC<StatCardProps> = ({
     showProgress = false,
     progressValue = 0
 }) => {
-    const [displayValue, setDisplayValue] = useState(0);
+    const numericValue = typeof value === 'number' ? value : parseInt(value) || 0;
+    const [displayValue, setDisplayValue] = useState(numericValue);
     const [isInView, setIsInView] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
+    const prevValueRef = useRef<number>(numericValue);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -109,12 +111,20 @@ const StatCard: React.FC<StatCardProps> = ({
     }, []);
 
     useEffect(() => {
-        if (!isInView) return;
-
         const targetValue = typeof value === 'number' ? value : parseInt(value);
         if (isNaN(targetValue)) return;
+        
+        // Skip animation if value hasn't changed
+        if (targetValue === prevValueRef.current) return;
 
-        const startValue = displayValue;
+        // If not in view yet, just set the value directly
+        if (!isInView) {
+            setDisplayValue(targetValue);
+            prevValueRef.current = targetValue;
+            return;
+        }
+
+        const startValue = prevValueRef.current;
         const duration = 1000;
         const steps = 50;
         const increment = (targetValue - startValue) / steps;
@@ -124,6 +134,7 @@ const StatCard: React.FC<StatCardProps> = ({
             currentStep++;
             if (currentStep >= steps) {
                 setDisplayValue(targetValue);
+                prevValueRef.current = targetValue;
                 clearInterval(timer);
             } else {
                 setDisplayValue(Math.floor(startValue + increment * currentStep));
@@ -174,8 +185,8 @@ const StatCard: React.FC<StatCardProps> = ({
                         <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: isInView ? `${progressValue}%` : 0 }}
-                                transition={{ duration: 1.5, delay: delay + 0.3, ease: "easeOut" }}
+                                animate={{ width: `${progressValue}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
                                 className={`h-full bg-gradient-to-r ${gradient} rounded-full relative`}
                             >
                                 <div className="absolute inset-0 shimmer" />
