@@ -11,6 +11,7 @@ import {
   saveProject, 
   setLastProjectId, 
   deleteProject,
+  renameProject,
   ProjectMetadata,
   StoredProject
 } from './utils/projectManager';
@@ -39,11 +40,30 @@ export default function App() {
     }
   }, []);
 
-  const handleDataLoaded = (loadedData: RootData, handle: FileSystemFileHandle | null = null, existingProjectId?: string) => {
+  const handleDataLoaded = async (loadedData: RootData, handle: FileSystemFileHandle | null = null, existingProjectId?: string) => {
     const fileName = loadedData.fileName || 'untitled.json';
+    let filePath: string | undefined;
+    
+    // Try to extract file path for better project name inference
+    if (handle) {
+      try {
+        const file = await handle.getFile();
+        // @ts-ignore - webkitRelativePath might be available
+        filePath = file.webkitRelativePath || file.path || undefined;
+        
+        // If we can't get the path from the file, try to construct it
+        if (!filePath && (window as any).showOpenFilePicker) {
+          // Modern API might have path info in some browsers
+          // For now, we'll use the file name as fallback
+          filePath = file.name;
+        }
+      } catch (e) {
+        console.log('Could not extract file path:', e);
+      }
+    }
     
     // Save to localStorage and get project metadata
-    const metadata = saveProject(loadedData, fileName, existingProjectId);
+    const metadata = saveProject(loadedData, fileName, existingProjectId, filePath);
     
     setData(loadedData);
     setFileHandle(handle);
@@ -102,6 +122,21 @@ export default function App() {
     setCurrentProjectId(null);
   };
 
+  const handleRenameProject = (projectId: string, newName: string) => {
+    const success = renameProject(projectId, newName);
+    
+    if (success) {
+      // Refresh available projects list
+      const projects = getAllProjects();
+      setAvailableProjects(projects.map(p => p.metadata));
+      
+      // If we renamed the current project, update the data object too
+      if (projectId === currentProjectId && data) {
+        setData({ ...data });
+      }
+    }
+  };
+
   // Live Sync Polling
   useEffect(() => {
     if (!fileHandle) return;
@@ -123,7 +158,10 @@ export default function App() {
               
               // Update in localStorage if we have a current project
               if (currentProjectId) {
-                saveProject(updatedData, file.name, currentProjectId);
+                // Try to get path from file
+                // @ts-ignore
+                const filePath = file.webkitRelativePath || file.path || undefined;
+                saveProject(updatedData, file.name, currentProjectId, filePath);
               }
             }
           } catch (e) {
@@ -156,6 +194,7 @@ export default function App() {
               onSwitchProject={handleSwitchProject}
               onDeleteProject={handleDeleteProject}
               onAddNewProject={handleAddNewProject}
+              onRenameProject={handleRenameProject}
               currentProjectId={currentProjectId}
               availableProjects={availableProjects}
               isSyncing={!!fileHandle}

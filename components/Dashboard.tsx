@@ -9,6 +9,7 @@ import { TaskFilters, FilterState } from './TaskFilters';
 import { PremiumStats } from './PremiumStats';
 import { DependencyMetrics } from './DependencyMetrics';
 import { ThemeToggle } from './ThemeToggle';
+import { ProjectNameEditor } from './ProjectNameEditor';
 
 interface DashboardProps {
   data: RootData;
@@ -16,6 +17,7 @@ interface DashboardProps {
   onSwitchProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
   onAddNewProject: () => void;
+  onRenameProject: (projectId: string, newName: string) => void;
   currentProjectId: string | null;
   availableProjects: ProjectMetadata[];
   isSyncing?: boolean;
@@ -30,6 +32,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSwitchProject, 
   onDeleteProject, 
   onAddNewProject, 
+  onRenameProject, 
   currentProjectId, 
   availableProjects, 
   isSyncing = false, 
@@ -150,16 +153,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           key={project.id}
                           className={`flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group ${project.id === currentProjectId ? 'bg-primary/10 border border-primary/20' : ''}`}
                         >
-                          <button
-                            onClick={() => {
-                              onSwitchProject(project.id);
-                              setIsProjectDropdownOpen(false);
-                            }}
-                            className="flex-1 text-left"
-                          >
-                            <div className="text-sm font-medium text-foreground">{project.name}</div>
-                            <div className="text-xs text-muted-foreground">{project.fileName}</div>
-                          </button>
+                          <div className="flex-1 min-w-0">
+                            <ProjectNameEditor
+                              projectId={project.id}
+                              currentName={project.name}
+                              onSave={onRenameProject}
+                            />
+                            <button
+                              onClick={() => {
+                                onSwitchProject(project.id);
+                                setIsProjectDropdownOpen(false);
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground text-left w-full mt-0.5"
+                            >
+                              {project.fileName}
+                            </button>
+                          </div>
                           {project.id !== currentProjectId && (
                             <button
                               onClick={(e) => {
@@ -168,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                   onDeleteProject(project.id);
                                 }
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive transition-all"
+                              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive transition-all shrink-0"
                               title="Delete project"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
