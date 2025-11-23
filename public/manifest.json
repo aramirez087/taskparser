@@ -1,0 +1,22 @@
+{
+  "name": "TaskMaster Pulse - AI Task Dashboard",
+  "short_name": "TaskMaster Pulse",
+  "description": "Real-time dashboard for Task Master AI. Track AI agent progress, dependencies, and execution plans with live sync.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "developer tools", "utilities"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

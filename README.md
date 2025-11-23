@@ -132,6 +132,27 @@ Pulse expects the `RootData` schema used by Task Master AI:
 2. Publish shareable progress reports (PDF/Markdown) to stakeholders.
 3. Support multiple agent files with quick switching/tabs.
 
+## SEO & Discoverability
+
+TaskMaster Pulse is optimized for search engines and social media sharing:
+
+### Implemented
+- **Meta Tags**: Comprehensive title, description, and keywords optimized for AI task management searches
+- **Open Graph**: Rich social media previews for Facebook, LinkedIn, and other platforms  
+- **Twitter Cards**: Large image cards for maximum Twitter engagement
+- **Structured Data**: JSON-LD schema for SoftwareApplication with GitHub repository link to prove open-source status
+- **GitHub Integration**: Repository URL in meta tags and structured data for credibility and discoverability
+- **PWA Support**: manifest.json for mobile installation and app store listings
+- **robots.txt & sitemap.xml**: Guides search engine crawlers efficiently
+
+### Next Steps
+1. **Create OG Images**: Add `og-image.png` (1200x630) and `screenshot.png` to `/public/`
+2. **Submit Sitemap**: Verify with Google Search Console and Bing Webmaster Tools
+3. **Build Backlinks**: Submit to Product Hunt, AlternativeTo, dev.to, and other directories
+4. **Monitor**: Use Google Analytics, Search Console, and Lighthouse for ongoing optimization
+
+See [SEO_GUIDE.md](./SEO_GUIDE.md) for detailed implementation notes and optimization strategies.
+
 ## License
 
 Distributed under the terms of the [LICENSE](./LICENSE) file.
