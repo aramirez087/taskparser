@@ -1,71 +1,111 @@
-# TaskMaster Pulse
+# TaskMaster Pulse 🎯
 
-> Give Task Master AI a live cockpit so developers stop re-asking their LLM for task status.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/aramirez087/taskparser)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/aramirez087/taskparser/issues)
 
-TaskMaster Pulse is the status companion for [Task Master AI](https://www.task-master.dev/). Feed it the JSON export that powers your AI agent, and Pulse turns that data into a cinematic dashboard: real-time stats, dependency graphs, and drill-down histories that keep engineers, PMs, and their copilots perfectly aligned.
+**A real-time visualization dashboard for AI agent task management**
 
-- **Live app:** https://taskparser-iota.vercel.app/
-- **Parent project:** https://www.task-master.dev/
+TaskMaster Pulse transforms JSON task data from [Task Master AI](https://www.task-master.dev/) into a beautiful, live-updating dashboard. Think of it as Mission Control for your AI agent—see task status, dependencies, logs, and metrics all in one place, in real-time.
 
-## Why it exists
+🚀 **[Try it live](https://taskparser-iota.vercel.app/)** | 📖 **[Task Master AI](https://www.task-master.dev/)**
 
-Task Master AI breaks ambiguous specs into actionable tasks your AI agent can one-shot. Pulse closes the loop by exposing the agent’s execution plan to humans:
+---
 
-1. **Developers** no longer ping their LLM for progress—Pulse shows it instantly.
-2. **PM/Agent teams** can watch dependencies, logs, and test strategies in one interface.
-3. **Automation loops** stay trustworthy because everyone sees the same canonical JSON.
+## What is this?
 
-## Highlights
+If you're using AI agents (like Claude, GPT-4, or Task Master AI) to break down complex projects into tasks, you need a way to visualize what's happening. TaskMaster Pulse takes your AI's task JSON file and gives you:
 
-1. **Instant ingestion** – drag/drop, file picker, or raw JSON paste.
-2. **File System Access live sync** – automatically refreshes the dashboard when the source JSON changes (Chrome/Edge).
-3. **Hybrid analytics** – glamorous landing, stat tiles, expandable task cards, activity timelines, and D3 dependency graph.
-4. **Task Master aware** – metadata banner echoes the agent’s description/name so context remains in sync.
-5. **Modern stack** – React 19, Vite, TypeScript, Framer Motion, Lucide, tailwind-merge, and D3.
+- ✅ **Live sync** - Changes to your JSON file auto-refresh the dashboard (no manual reload!)
+- 📊 **Visual metrics** - See progress, blockers, SLA status at a glance  
+- 🕸️ **Dependency graphs** - Interactive D3 visualization of task relationships
+- 📝 **Activity timelines** - Track when tasks were created, updated, and completed
+- 🎨 **Beautiful UI** - Modern, responsive design built with React + TailwindCSS
 
-## Requirements
+Perfect for developers, project managers, and teams who want to stay in sync with their AI agents without constantly asking "what's the status?"
 
-- Node.js 20+
-- npm 10+
-- Optional: Chromium-based browser for live file syncing (fallback upload works everywhere)
+---
 
-### Environment Variables
+## Why Use This?
 
-Create `.env.local` and add:
+**Problem:** You're using an AI agent to manage tasks, but checking progress means re-opening the JSON file or asking the AI "what's done?"
 
-```
-GEMINI_API_KEY="your-key"
-```
+**Solution:** TaskMaster Pulse gives you a persistent, auto-updating dashboard. Edit your JSON in VSCode, and watch the dashboard update in real-time. Share the URL with your team so everyone sees the same truth.
 
-> Reserved for upcoming Gemini-powered parsing helpers. Not required for core visualization yet.
+---
 
-## Getting Started
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 20 or higher
+- **npm** 10 or higher
+- **Browser:** Chrome/Edge recommended (for live sync), but any modern browser works
+
+### Installation
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
+# Clone the repository
+git clone https://github.com/aramirez087/taskparser.git
+cd taskparser
 
-npm run build      # outputs to dist/
-npm run preview
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-Vercel deploys use the **Vite** preset (`npm run build`, output `dist/`).
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Usage Workflow
+### Build for Production
 
-1. **Launch Pulse** – local dev server or the hosted Vercel URL.
-2. **Load Task Master AI data**
-   - “Open File & Watch Changes” (recommended) enables live syncing with the JSON file driving your agent.
-   - Drag-and-drop or paste raw JSON as a fallback.
-3. **Review the cockpit**
-   - Sticky header mirrors `master.metadata`, file name, and sync status.
-   - Stat cards highlight totals, completion, SLAs, and blockers.
-4. **Explore tasks**
-   - **List mode:** motion-enhanced cards with details, logs parsed from `<info added on …>` blocks, subtasks, dependencies, and test plans.
-   - **Graph mode:** D3 force layout showing dependency health (color-coded by status) with zoom/pan.
-5. **Stay aligned** – keep the JSON open in your editor, edit freely, and Pulse will reflect updates every second.
+```bash
+npm run build      # Outputs to dist/
+npm run preview    # Preview production build
+```
 
-## JSON Data Model
+### Optional: Environment Variables
+
+Create `.env.local` if you want to use upcoming Gemini features:
+
+```env
+GEMINI_API_KEY="your-key-here"
+```
+
+> ⚠️ Not required for core visualization features.
+
+---
+
+## 📖 How to Use
+
+### Step 1: Get Your Task Data
+Export or generate JSON from Task Master AI (or any compatible task management system). See [JSON Format](#json-format) below for the expected structure.
+
+### Step 2: Load Data into Pulse
+You have three options:
+
+1. **Open File & Watch Changes** (Recommended)
+   - Click this button on the landing page
+   - Select your JSON file
+   - Pulse will automatically detect and reflect any changes you make to the file
+
+2. **Drag & Drop**
+   - Simply drag your JSON file onto the landing page
+
+3. **Paste JSON**
+   - Copy your JSON and paste it into the text area
+
+### Step 3: Explore Your Dashboard
+
+- **Metrics** - See overall progress, completion rate, blockers at the top
+- **Task List** - View all tasks with expandable details, logs, subtasks
+- **Dependency Graph** - Visualize how tasks depend on each other (toggle with Graph View button)
+- **Live Sync** - If using file watching, any edits auto-refresh in ~1 second
+
+---
+
+## 📋 JSON Format
 
 Pulse expects the `RootData` schema used by Task Master AI:
 
@@ -104,7 +144,9 @@ Pulse expects the `RootData` schema used by Task Master AI:
 - `Task`: description, priority, status, dependencies, subtasks, and `details` string containing optional `<info added on …>` log entries.
 - `Subtask`: lightweight items inheriting the same status/priority/testStrategy fields.
 
-## Project Structure
+---
+
+## 🏗️ Project Structure
 
 ```
 ├── App.tsx                # switches between landing and dashboard, handles live sync polling
@@ -120,39 +162,95 @@ Pulse expects the `RootData` schema used by Task Master AI:
 └── package.json
 ```
 
-## Troubleshooting
+---
+
+## 🔧 Troubleshooting
 
 1. **“Invalid JSON structure. Missing 'master.tasks'.”** – ensure tasks live under `master.tasks` with metadata filled in.
 2. **Live sync banner shows errors** – the watched file changed but JSON is invalid or file permissions were revoked; fix and reopen.
 3. **Graph view is empty** – requires at least one task, and edges appear only when dependencies reference other IDs.
 
-## Roadmap & Ideas
+---
 
-1. Trigger Gemini to fix malformed JSON or summarize risk hot spots.
-2. Publish shareable progress reports (PDF/Markdown) to stakeholders.
-3. Support multiple agent files with quick switching/tabs.
+## 🗺️ Roadmap
 
-## SEO & Discoverability
+- [ ] AI-powered JSON validation and auto-fix (Gemini integration)
+- [ ] Export progress reports (PDF/Markdown)
+- [ ] Multi-file support with tabs
+- [ ] Custom themes and layouts
+- [ ] Webhook notifications for task updates
 
-TaskMaster Pulse is optimized for search engines and social media sharing:
+Have ideas? [Open an issue](https://github.com/aramirez087/taskparser/issues)!
 
-### Implemented
-- **Meta Tags**: Comprehensive title, description, and keywords optimized for AI task management searches
-- **Open Graph**: Rich social media previews for Facebook, LinkedIn, and other platforms  
-- **Twitter Cards**: Large image cards for maximum Twitter engagement
-- **Structured Data**: JSON-LD schema for SoftwareApplication with GitHub repository link to prove open-source status
-- **GitHub Integration**: Repository URL in meta tags and structured data for credibility and discoverability
-- **PWA Support**: manifest.json for mobile installation and app store listings
-- **robots.txt & sitemap.xml**: Guides search engine crawlers efficiently
+---
 
-### Next Steps
-1. **Create OG Images**: Add `og-image.png` (1200x630) and `screenshot.png` to `/public/`
-2. **Submit Sitemap**: Verify with Google Search Console and Bing Webmaster Tools
-3. **Build Backlinks**: Submit to Product Hunt, AlternativeTo, dev.to, and other directories
-4. **Monitor**: Use Google Analytics, Search Console, and Lighthouse for ongoing optimization
+## 🤝 Contributing
 
-See [SEO_GUIDE.md](./SEO_GUIDE.md) for detailed implementation notes and optimization strategies.
+We welcome contributions! Whether it's bug fixes, new features, documentation, or ideas—we'd love your help.
 
-## License
+### Ways to Contribute
 
-Distributed under the terms of the [LICENSE](./LICENSE) file.
+1. **Report Bugs** - [Open an issue](https://github.com/aramirez087/taskparser/issues) with reproduction steps
+2. **Suggest Features** - Share your ideas in [Discussions](https://github.com/aramirez087/taskparser/discussions)
+3. **Submit PRs** - Fix bugs or implement features (see below)
+4. **Improve Docs** - Help make the README or code comments clearer
+
+### Development Workflow
+
+```bash
+# Fork and clone the repo
+git clone https://github.com/YOUR-USERNAME/taskparser.git
+cd taskparser
+
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes and test
+npm install
+npm run dev
+
+# Commit with clear messages
+git commit -m "Add: descriptive message about your change"
+
+# Push and open a PR
+git push origin feature/your-feature-name
+```
+
+### Code Guidelines
+
+- **Style**: Follow existing code patterns (TypeScript, React hooks, functional components)
+- **Components**: Keep components small and focused
+- **Testing**: Test your changes manually before submitting
+- **Commits**: Use clear, descriptive commit messages
+
+### Need Help?
+
+Not sure where to start? Check out [issues labeled "good first issue"](https://github.com/aramirez087/taskparser/labels/good%20first%20issue) or reach out in [Discussions](https://github.com/aramirez087/taskparser/discussions).
+
+---
+
+## 📄 License
+
+This project is open source under the [MIT License](LICENSE). Free to use, modify, and distribute.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with modern web technologies:
+- [React 19](https://react.dev/) - UI framework
+- [Vite](https://vitejs.dev/) - Build tool
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [TailwindCSS](https://tailwindcss.com/) - Styling
+- [Framer Motion](https://www.framer.com/motion/) - Animations
+- [D3.js](https://d3js.org/) - Data visualization
+- [Lucide](https://lucide.dev/) - Icons
+
+Inspired by [Task Master AI](https://www.task-master.dev/) and the need for better AI agent visibility.
+
+---
+
+<p align="center">
+  <strong>⭐ If you find this useful, give it a star!</strong><br>
+  Made with ❤️ for the AI agent community
+</p>

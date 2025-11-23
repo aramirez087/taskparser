@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RootData } from '../types';
 import { motion } from 'framer-motion';
-import { Upload, FileJson, Terminal, AlertCircle, FileSearch, Laptop } from 'lucide-react';
+import { Upload, FileJson, Terminal, AlertCircle, FileSearch, Laptop, Github, Heart } from 'lucide-react';
 
 interface LandingProps {
   onDataLoaded: (data: RootData, fileHandle?: any) => void;
@@ -206,6 +206,31 @@ export const Landing: React.FC<LandingProps> = ({ onDataLoaded }) => {
 
           </div>
         </div>
+
+        {/* Open Source Badge */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-6 text-center"
+        >
+          <a 
+            href="https://github.com/aramirez087/taskparser" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-all duration-300 group text-foreground"
+          >
+            <div className="flex items-center gap-2">
+              <Github className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="font-medium">Open Source</span>
+            </div>
+            <div className="h-4 w-px bg-border"></div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+              <Heart className="w-4 h-4" />
+              <span>Contributions Welcome</span>
+            </div>
+          </a>
+        </motion.div>
       </div>
     </motion.div>
   );
