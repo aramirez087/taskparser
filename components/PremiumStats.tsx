@@ -1,14 +1,14 @@
 import React from 'react';
-import { RootData } from '../types';
+import { Task } from '../types';
 import { motion } from 'framer-motion';
 import { TrendingUp, Zap, Target, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface PremiumStatsProps {
-    data: RootData;
+    tasks: Task[];
 }
 
-export const PremiumStats: React.FC<PremiumStatsProps> = ({ data }) => {
-    const allTasks = data.master.tasks;
+export const PremiumStats: React.FC<PremiumStatsProps> = ({ tasks }) => {
+    const allTasks = tasks;
 
     const stats = {
         total: allTasks.length,

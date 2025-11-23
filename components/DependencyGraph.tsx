@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Task, Subtask } from '../types';
-import { X, CheckCircle2, ArrowRight, Minimize2 } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, Minimize2, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DependencyGraphProps {
@@ -30,6 +30,21 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
+
+  // Show empty state if no tasks
+  if (tasks.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="bg-muted/30 p-8 rounded-2xl border border-border/50 max-w-md text-center">
+          <div className="bg-muted/50 p-3 rounded-full w-fit mx-auto mb-4">
+            <Network className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">No tasks to display</h3>
+          <p className="text-sm text-muted-foreground">Try adjusting your filters or search query to view the dependency graph.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Apple System Colors
   const getStatusColor = (status: string) => {

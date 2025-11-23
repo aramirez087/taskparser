@@ -157,8 +157,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
 
       {/* Premium Stats Bar */}
       <div className="px-6 py-8 space-y-8 max-w-[1600px] mx-auto w-full">
-        <PremiumStats data={data} />
-        <DependencyMetrics tasks={data.master.tasks} />
+        <PremiumStats tasks={filteredTasks} />
+        <DependencyMetrics tasks={filteredTasks} />
       </div>
 
       {/* Main Content Area */}
@@ -194,54 +194,66 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
                 transition={{ duration: 0.2 }}
                 className="clean-card overflow-hidden bg-card"
               >
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
-                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Title</th>
-                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Priority</th>
-                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Deps</th>
-                        <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Subtasks</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                      {filteredTasks.map(task => (
-                        <tr key={task.id} className="hover:bg-muted/30 transition-colors group">
-                          <td className="p-4 font-mono text-xs text-muted-foreground">#{task.id}</td>
-                          <td className="p-4 font-medium text-sm text-foreground">{task.title}</td>
-                          <td className="p-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${task.status === 'done' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400' :
-                                task.status === 'in-progress' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400' :
-                                  task.status === 'cancelled' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400' :
-                                    task.status === 'deferred' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' :
-                                      'bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400'
-                              }`}>
-                              {task.status}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1.5">
-                              <div className={`w-1.5 h-1.5 rounded-full ${task.priority === 'critical' ? 'bg-red-500' :
-                                task.priority === 'high' ? 'bg-amber-500' :
-                                  task.priority === 'medium' ? 'bg-blue-500' :
-                                    'bg-slate-300 dark:bg-slate-600'
-                                }`}></div>
-                              <span className="text-xs text-muted-foreground capitalize">{task.priority}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-xs text-muted-foreground">
-                            {task.dependencies?.length || '-'}
-                          </td>
-                          <td className="p-4 text-xs text-muted-foreground">
-                            {task.subtasks?.length || '-'}
-                          </td>
+                {filteredTasks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="bg-muted/30 p-8 rounded-2xl border border-border/50 max-w-md">
+                      <div className="bg-muted/50 p-3 rounded-full w-fit mx-auto mb-4">
+                        <TableIcon className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">No tasks found</h3>
+                      <p className="text-sm text-muted-foreground">Try adjusting your filters or search query to find what you're looking for.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/30">
+                          <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
+                          <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Title</th>
+                          <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                          <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Priority</th>
+                          <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Deps</th>
+                          <th className="p-4 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Subtasks</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-border/50">
+                        {filteredTasks.map(task => (
+                          <tr key={task.id} className="hover:bg-muted/30 transition-colors group">
+                            <td className="p-4 font-mono text-xs text-muted-foreground">#{task.id}</td>
+                            <td className="p-4 font-medium text-sm text-foreground">{task.title}</td>
+                            <td className="p-4">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${task.status === 'done' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400' :
+                                  task.status === 'in-progress' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400' :
+                                    task.status === 'cancelled' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400' :
+                                      task.status === 'deferred' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400' :
+                                        'bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400'
+                                }`}>
+                                {task.status}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${task.priority === 'critical' ? 'bg-red-500' :
+                                  task.priority === 'high' ? 'bg-amber-500' :
+                                    task.priority === 'medium' ? 'bg-blue-500' :
+                                      'bg-slate-300 dark:bg-slate-600'
+                                  }`}></div>
+                                <span className="text-xs text-muted-foreground capitalize">{task.priority}</span>
+                              </div>
+                            </td>
+                            <td className="p-4 text-xs text-muted-foreground">
+                              {task.dependencies?.length || '-'}
+                            </td>
+                            <td className="p-4 text-xs text-muted-foreground">
+                              {task.subtasks?.length || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
