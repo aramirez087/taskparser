@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { RootData, Task } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List } from 'lucide-react';
+import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List, FolderOpen, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { ProjectMetadata } from '../utils/projectManager';
 import { TaskList } from './TaskList';
 import { DependencyGraph } from './DependencyGraph';
 import { TaskFilters, FilterState } from './TaskFilters';
@@ -12,14 +13,30 @@ import { ThemeToggle } from './ThemeToggle';
 interface DashboardProps {
   data: RootData;
   onReset: () => void;
+  onSwitchProject: (projectId: string) => void;
+  onDeleteProject: (projectId: string) => void;
+  onAddNewProject: () => void;
+  currentProjectId: string | null;
+  availableProjects: ProjectMetadata[];
   isSyncing?: boolean;
   syncError?: string | null;
 }
 
 type ViewMode = 'list' | 'graph' | 'table';
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing = false, syncError }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  data, 
+  onReset, 
+  onSwitchProject, 
+  onDeleteProject, 
+  onAddNewProject, 
+  currentProjectId, 
+  availableProjects, 
+  isSyncing = false, 
+  syncError 
+}) => {
   const [viewMode, setViewMode] = useState<'list' | 'graph' | 'table'>('list');
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     status: [],
     priority: [],
@@ -84,26 +101,99 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onReset, isSyncing =
           <div className="bg-primary/5 p-2 rounded-lg border border-primary/10">
             <Activity className="w-5 h-5 text-primary" />
           </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-foreground tracking-tight">
-                {data.master.metadata.description || data.master.metadata.name || "Project Overview"}
-              </h1>
-              {isSyncing && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                  </span>
-                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Syncing</span>
+          
+          {/* Project Switcher Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors border border-border/50 bg-background/50"
+            >
+              <FolderOpen className="w-4 h-4 text-primary" />
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm font-semibold text-foreground tracking-tight">
+                    {availableProjects.find(p => p.id === currentProjectId)?.name || "Project"}
+                  </h1>
+                  {isSyncing && (
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                  )}
                 </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {data.fileName && <span className="font-medium text-foreground/80">{data.fileName}</span>}
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {isProjectDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 mt-2 w-80 glass-panel rounded-lg border border-border/50 shadow-xl overflow-hidden z-50"
+                  onMouseLeave={() => setIsProjectDropdownOpen(false)}
+                >
+                  <div className="p-2">
+                    <div className="flex items-center justify-between px-3 py-2 mb-2">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Projects</span>
+                      <span className="text-xs text-muted-foreground">{availableProjects.length}</span>
+                    </div>
+                    
+                    <div className="max-h-64 overflow-y-auto space-y-1">
+                      {availableProjects.map(project => (
+                        <div
+                          key={project.id}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group ${project.id === currentProjectId ? 'bg-primary/10 border border-primary/20' : ''}`}
+                        >
+                          <button
+                            onClick={() => {
+                              onSwitchProject(project.id);
+                              setIsProjectDropdownOpen(false);
+                            }}
+                            className="flex-1 text-left"
+                          >
+                            <div className="text-sm font-medium text-foreground">{project.name}</div>
+                            <div className="text-xs text-muted-foreground">{project.fileName}</div>
+                          </button>
+                          {project.id !== currentProjectId && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Delete project "${project.name}"?`)) {
+                                  onDeleteProject(project.id);
+                                }
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive transition-all"
+                              title="Delete project"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="border-t border-border/50 mt-2 pt-2">
+                      <button
+                        onClick={() => {
+                          onAddNewProject();
+                          setIsProjectDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary/10 text-primary transition-colors text-sm font-medium"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add New Project
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
               )}
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {data.fileName && <span className="font-medium text-foreground/80">{data.fileName}</span>}
-              <span className="opacity-30">•</span>
-              <span>Updated {new Date(data.master.metadata.updated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
+            </AnimatePresence>
           </div>
         </div>
 
