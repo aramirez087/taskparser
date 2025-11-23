@@ -210,7 +210,18 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       )
       .force("charge", d3.forceManyBody().strength(d => (d as GraphNode).type === 'task' ? -800 : -200))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide().radius((d: any) => d.radius + 20).iterations(2));
+      .force("collide", d3.forceCollide().radius((d: any) => d.radius + 20).iterations(2))
+      // Keep nodes within viewport bounds (helps isolated nodes stay visible)
+      .force("bound", () => {
+        const margin = 100;
+        nodes.forEach(d => {
+          const node = d as any;
+          if (node.x !== undefined && node.y !== undefined) {
+            node.x = Math.max(margin, Math.min(width - margin, node.x));
+            node.y = Math.max(margin, Math.min(height - margin, node.y));
+          }
+        });
+      });
 
     // Arrow Marker
     defs.append("marker")
