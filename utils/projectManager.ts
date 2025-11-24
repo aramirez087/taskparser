@@ -119,20 +119,66 @@ export function getAllProjects(): StoredProject[] {
 }
 
 /**
+ * Find an existing project by fileName and optionally filePath
+ */
+function findExistingProject(projects: StoredProject[], fileName: string, filePath?: string): StoredProject | null {
+  // First, try to match by filePath if available (most reliable)
+  if (filePath) {
+    const byPath = projects.find(p => p.metadata.filePath === filePath);
+    if (byPath) return byPath;
+  }
+  
+  // Fall back to matching by fileName
+  // If multiple projects have the same fileName, return the most recently opened one
+  const byFileName = projects.filter(p => p.metadata.fileName === fileName);
+  if (byFileName.length > 0) {
+    // Sort by lastOpened descending and return the first
+    byFileName.sort((a, b) => b.metadata.lastOpened - a.metadata.lastOpened);
+    return byFileName[0];
+  }
+  
+  return null;
+}
+
+/**
  * Save or update a project in localStorage
  */
 export function saveProject(data: RootData, fileName: string, existingId?: string, filePath?: string): ProjectMetadata {
   const projects = getAllProjects();
   
-  // Check if we're updating an existing project
-  const existingIndex = existingId 
+  // Check if we're updating an existing project by ID
+  let existingIndex = existingId 
     ? projects.findIndex(p => p.metadata.id === existingId)
     : -1;
   
-  const projectId = existingId || generateProjectId(fileName);
+  // If no existingId provided, try to find a matching project by fileName/filePath
+  let projectId = existingId;
+  if (existingIndex < 0 && !existingId) {
+    const existingProject = findExistingProject(projects, fileName, filePath);
+    if (existingProject) {
+      projectId = existingProject.metadata.id;
+      existingIndex = projects.findIndex(p => p.metadata.id === projectId);
+      console.log(`Found existing project: ${existingProject.metadata.name} (${projectId})`);
+    }
+  }
+  
+  // Generate new ID only if we didn't find an existing project
+  let isNewProject = false;
+  if (!projectId) {
+    projectId = generateProjectId(fileName);
+    isNewProject = true;
+    console.log(`Creating new project: ${projectId}`);
+  }
+  
+  // Preserve existing project name if updating, otherwise infer from path/filename
+  const existingProject = existingIndex >= 0 ? projects[existingIndex] : null;
+  const projectName = existingProject && !isNewProject
+    ? existingProject.metadata.name  // Keep the existing name (respects user renames)
+    : inferProjectName(fileName, filePath);  // Infer name for new projects
+  
   const metadata: ProjectMetadata = {
     id: projectId,
-    name: inferProjectName(fileName, filePath),
+    name: projectName,
     fileName: fileName,
     lastOpened: Date.now(),
     filePath: filePath,

@@ -202,16 +202,47 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       return nodeIdSet.has(s) && nodeIdSet.has(t);
     });
 
+    // Identify isolated nodes (no dependencies)
+    const connectedNodeIds = new Set<string>();
+    safeLinks.forEach(link => {
+      const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
+      const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+      connectedNodeIds.add(sourceId.toString());
+      connectedNodeIds.add(targetId.toString());
+    });
+    
+    // Mark nodes as isolated or connected
+    nodes.forEach(node => {
+      (node as any).isIsolated = !connectedNodeIds.has(node.id.toString());
+    });
+    
     const simulation = d3.forceSimulation<GraphNode>(nodes)
       .force("link", d3.forceLink<GraphNode, GraphLink>(safeLinks)
         .id(d => d.id.toString())
         .distance(d => d.type === 'hierarchy' ? 60 : 150)
         .strength(d => d.type === 'hierarchy' ? 0.8 : 0.3)
       )
-      .force("charge", d3.forceManyBody().strength(d => (d as GraphNode).type === 'task' ? -800 : -200))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide().radius((d: any) => d.radius + 20).iterations(2))
-      // Keep nodes within viewport bounds (helps isolated nodes stay visible)
+      // Adaptive charge: weaker repulsion for isolated nodes
+      .force("charge", d3.forceManyBody().strength(d => {
+        const node = d as any;
+        if (node.isIsolated) {
+          return node.type === 'task' ? -150 : -50; // Much weaker for isolated nodes
+        }
+        return node.type === 'task' ? -800 : -200; // Strong for connected nodes
+      }))
+      .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+      // Stronger collision for tighter packing of isolated nodes
+      .force("collide", d3.forceCollide().radius((d: any) => d.radius + (d.isIsolated ? 15 : 20)).iterations(3))
+      // Radial force to group isolated nodes in a compact cluster
+      .force("radial", d3.forceRadial<GraphNode>(
+        (d: any) => d.isIsolated ? 150 : 0, // Pull isolated nodes to a radius
+        width / 2,
+        height / 2
+      ).strength((d: any) => d.isIsolated ? 0.3 : 0))
+      // Position force for grid-like arrangement of isolated nodes
+      .force("x", d3.forceX<GraphNode>().strength((d: any) => d.isIsolated ? 0.1 : 0.02))
+      .force("y", d3.forceY<GraphNode>().strength((d: any) => d.isIsolated ? 0.1 : 0.02))
+      // Keep nodes within viewport bounds
       .force("bound", () => {
         const margin = 100;
         nodes.forEach(d => {
