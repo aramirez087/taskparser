@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Task, Subtask } from '../types';
-import { X, CheckCircle2, ArrowRight, Minimize2, Network } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, Minimize2, Maximize2, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DependencyGraphProps {
@@ -226,13 +226,13 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
       .force("charge", d3.forceManyBody().strength(d => {
         const node = d as any;
         if (node.isIsolated) {
-          return node.type === 'task' ? -150 : -50; // Much weaker for isolated nodes
+          return node.type === 'task' ? -300 : -100; // Increased repulsion for better spacing
         }
         return node.type === 'task' ? -800 : -200; // Strong for connected nodes
       }))
       .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
-      // Stronger collision for tighter packing of isolated nodes
-      .force("collide", d3.forceCollide().radius((d: any) => d.radius + (d.isIsolated ? 15 : 20)).iterations(3))
+      // Increased collision radius for more space between isolated nodes
+      .force("collide", d3.forceCollide().radius((d: any) => d.radius + (d.isIsolated ? 35 : 20)).iterations(3))
       // Radial force to group isolated nodes in a compact cluster
       .force("radial", d3.forceRadial<GraphNode>(
         (d: any) => d.isIsolated ? 150 : 0, // Pull isolated nodes to a radius
@@ -505,23 +505,51 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ tasks }) => {
     <div ref={containerRef} className="relative w-full h-full bg-card overflow-hidden">
       <svg ref={svgRef} className="w-full h-full block cursor-move" />
 
-      {/* Collapse All Button */}
+      {/* Expand/Collapse All Button */}
       <AnimatePresence>
-        {expandedNodeIds.size > 0 && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setExpandedNodeIds(new Set())}
-            className="absolute top-4 left-4 clean-card px-4 py-2 shadow-lg z-50 bg-background/95 backdrop-blur-xl hover:bg-muted/50 transition-colors group"
-          >
-            <div className="flex items-center gap-2">
-              <Minimize2 className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              <span className="text-sm font-medium text-foreground">Collapse All</span>
-            </div>
-          </motion.button>
-        )}
+        {(() => {
+          // Check if there are any tasks with subtasks
+          const tasksWithSubtasks = tasks.filter(t => t.subtasks && t.subtasks.length > 0);
+          const hasExpandableTasks = tasksWithSubtasks.length > 0;
+          const isCollapsed = expandedNodeIds.size === 0;
+          
+          if (!hasExpandableTasks) return null;
+          
+          return (
+            <motion.button
+              key={isCollapsed ? 'expand' : 'collapse'}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => {
+                if (isCollapsed) {
+                  // Expand all tasks with subtasks
+                  const allTaskIds = new Set(tasksWithSubtasks.map(t => t.id.toString()));
+                  setExpandedNodeIds(allTaskIds);
+                } else {
+                  // Collapse all
+                  setExpandedNodeIds(new Set());
+                }
+              }}
+              className="absolute top-4 left-4 clean-card px-4 py-2 shadow-lg z-50 bg-background/95 backdrop-blur-xl hover:bg-muted/50 transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                {isCollapsed ? (
+                  <>
+                    <Maximize2 className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span className="text-sm font-medium text-foreground">Expand All</span>
+                  </>
+                ) : (
+                  <>
+                    <Minimize2 className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span className="text-sm font-medium text-foreground">Collapse All</span>
+                  </>
+                )}
+              </div>
+            </motion.button>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Detail Overlay */}
