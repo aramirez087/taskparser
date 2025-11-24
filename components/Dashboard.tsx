@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { RootData, Task } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List, FolderOpen, ChevronDown, Plus, Trash2, Minimize2, Maximize2 } from 'lucide-react';
@@ -38,15 +38,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
   isSyncing = false, 
   syncError 
 }) => {
-  const [viewMode, setViewMode] = useState<'list' | 'graph' | 'table'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'graph' | 'table'>(() => {
+    const saved = localStorage.getItem('taskparser_viewMode');
+    return (saved === 'list' || saved === 'graph' || saved === 'table') ? saved : 'list';
+  });
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
-  const [isStatsCompact, setIsStatsCompact] = useState(false);
+  const [isStatsCompact, setIsStatsCompact] = useState(() => {
+    const saved = localStorage.getItem('taskparser_statsCompact');
+    return saved === 'true';
+  });
   const [filters, setFilters] = useState<FilterState>({
     status: [],
     priority: [],
     searchQuery: '',
     hasSubtasks: null
   });
+
+  // Persist viewMode to localStorage
+  useEffect(() => {
+    localStorage.setItem('taskparser_viewMode', viewMode);
+  }, [viewMode]);
+
+  // Persist stats compact preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('taskparser_statsCompact', isStatsCompact.toString());
+  }, [isStatsCompact]);
 
   // Filter tasks based on current filters
   const filteredTasks = useMemo(() => {
@@ -256,29 +272,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </AnimatePresence>
 
       {/* Premium Stats Bar */}
-      <div className="px-6 py-8 space-y-8 max-w-[1600px] mx-auto w-full">
+      <div className="px-6 py-6 max-w-[1600px] mx-auto w-full">
         <div className="relative">
           {/* Compact View Toggle */}
-          <button
+          <motion.button
             onClick={() => setIsStatsCompact(!isStatsCompact)}
-            className="absolute -top-4 right-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border/50 bg-background/50 z-10"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="absolute -top-2 right-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border/50 bg-background/50 backdrop-blur-sm shadow-sm z-10 group"
             title={isStatsCompact ? 'Expand view' : 'Compact view'}
           >
             {isStatsCompact ? (
               <>
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span>Expand</span>
+                <Maximize2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">Expand</span>
               </>
             ) : (
               <>
-                <Minimize2 className="w-3.5 h-3.5" />
-                <span>Compact</span>
+                <Minimize2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">Compact</span>
               </>
             )}
-          </button>
+          </motion.button>
           
-          <PremiumStats tasks={filteredTasks} compact={isStatsCompact} />
-          <DependencyMetrics tasks={filteredTasks} compact={isStatsCompact} />
+          <div className="space-y-4 pt-6">
+            <PremiumStats tasks={filteredTasks} compact={isStatsCompact} />
+            <DependencyMetrics tasks={filteredTasks} compact={isStatsCompact} />
+          </div>
         </div>
       </div>
 

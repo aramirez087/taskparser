@@ -3,6 +3,48 @@ import { Task } from '../types';
 import { motion } from 'framer-motion';
 import { TrendingUp, Zap, Target, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 
+interface CompactStatItemProps {
+    icon: React.ReactNode;
+    label: string;
+    value: number | string;
+    iconColor: string;
+    showProgress?: boolean;
+    progressValue?: number;
+}
+
+const CompactStatItem: React.FC<CompactStatItemProps> = ({
+    icon,
+    label,
+    value,
+    iconColor,
+    showProgress = false,
+    progressValue = 0
+}) => {
+    return (
+        <div className="flex items-center gap-3 flex-1">
+            <div className={`p-1.5 rounded-md bg-muted/50 ${iconColor} shrink-0`}>
+                {icon}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">{label}</div>
+                <div className="text-lg font-semibold text-foreground tracking-tight">{value}</div>
+                {showProgress && (
+                    <div className="mt-1">
+                        <div className="h-1 bg-muted rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressValue}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                className="h-full bg-primary rounded-full"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 interface PremiumStatsProps {
     tasks: Task[];
     compact?: boolean;
@@ -33,8 +75,8 @@ export const PremiumStats: React.FC<PremiumStatsProps> = ({ tasks, compact = fal
 
     if (compact) {
         return (
-            <div className="clean-card p-3 bg-card mb-4">
-                <div className="flex items-center justify-between gap-4">
+            <div className="clean-card p-4 bg-card">
+                <div className="flex items-center justify-between gap-6">
                     <CompactStatItem
                         icon={<Target className="w-3.5 h-3.5" />}
                         label="Total"
