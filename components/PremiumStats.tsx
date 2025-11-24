@@ -5,9 +5,10 @@ import { TrendingUp, Zap, Target, Clock, CheckCircle2, AlertTriangle } from 'luc
 
 interface PremiumStatsProps {
     tasks: Task[];
+    compact?: boolean;
 }
 
-export const PremiumStats: React.FC<PremiumStatsProps> = ({ tasks }) => {
+export const PremiumStats: React.FC<PremiumStatsProps> = ({ tasks, compact = false }) => {
     const allTasks = tasks;
 
     const stats = {
@@ -29,6 +30,44 @@ export const PremiumStats: React.FC<PremiumStatsProps> = ({ tasks }) => {
             }, 0) / stats.total
         )
         : 0;
+
+    if (compact) {
+        return (
+            <div className="clean-card p-3 bg-card mb-4">
+                <div className="flex items-center justify-between gap-4">
+                    <CompactStatItem
+                        icon={<Target className="w-3.5 h-3.5" />}
+                        label="Total"
+                        value={stats.total}
+                        iconColor="text-blue-500"
+                    />
+                    <div className="h-8 w-px bg-border/50" />
+                    <CompactStatItem
+                        icon={<Zap className="w-3.5 h-3.5" />}
+                        label="In Progress"
+                        value={stats.inProgress}
+                        iconColor="text-amber-500"
+                    />
+                    <div className="h-8 w-px bg-border/50" />
+                    <CompactStatItem
+                        icon={<AlertTriangle className="w-3.5 h-3.5" />}
+                        label="High Priority"
+                        value={stats.highPriority}
+                        iconColor="text-rose-500"
+                    />
+                    <div className="h-8 w-px bg-border/50" />
+                    <CompactStatItem
+                        icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                        label="Completion"
+                        value={`${completionRate}%`}
+                        iconColor="text-emerald-500"
+                        showProgress
+                        progressValue={completionRate}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

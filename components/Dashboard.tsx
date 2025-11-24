@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { RootData, Task } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List, FolderOpen, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List, FolderOpen, ChevronDown, Plus, Trash2, Minimize2, Maximize2 } from 'lucide-react';
 import { ProjectMetadata } from '../utils/projectManager';
 import { TaskList } from './TaskList';
 import { DependencyGraph } from './DependencyGraph';
@@ -40,6 +40,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'graph' | 'table'>('list');
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [isStatsCompact, setIsStatsCompact] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     status: [],
     priority: [],
@@ -256,8 +257,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Premium Stats Bar */}
       <div className="px-6 py-8 space-y-8 max-w-[1600px] mx-auto w-full">
-        <PremiumStats tasks={filteredTasks} />
-        <DependencyMetrics tasks={filteredTasks} />
+        <div className="relative">
+          {/* Compact View Toggle */}
+          <button
+            onClick={() => setIsStatsCompact(!isStatsCompact)}
+            className="absolute -top-4 right-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border border-border/50 bg-background/50 z-10"
+            title={isStatsCompact ? 'Expand view' : 'Compact view'}
+          >
+            {isStatsCompact ? (
+              <>
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Expand</span>
+              </>
+            ) : (
+              <>
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Compact</span>
+              </>
+            )}
+          </button>
+          
+          <PremiumStats tasks={filteredTasks} compact={isStatsCompact} />
+          <DependencyMetrics tasks={filteredTasks} compact={isStatsCompact} />
+        </div>
       </div>
 
       {/* Main Content Area */}
