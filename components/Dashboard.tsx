@@ -18,6 +18,7 @@ interface DashboardProps {
   onDeleteProject: (projectId: string) => void;
   onAddNewProject: () => void;
   onRenameProject: (projectId: string, newName: string) => void;
+  onRefresh?: () => void;
   currentProjectId: string | null;
   availableProjects: ProjectMetadata[];
   isSyncing?: boolean;
@@ -33,6 +34,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDeleteProject, 
   onAddNewProject, 
   onRenameProject, 
+  onRefresh,
   currentProjectId, 
   availableProjects, 
   isSyncing = false, 
@@ -143,6 +145,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {data.fileName && <span className="font-medium text-foreground/80">{data.fileName}</span>}
+                  {!isSyncing && onRefresh && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRefresh();
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/70 transition-colors text-muted-foreground hover:text-foreground"
+                      title="Refresh from storage"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span className="text-[10px] font-medium">Refresh</span>
+                    </button>
+                  )}
                 </div>
               </div>
               <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />

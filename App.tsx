@@ -137,6 +137,18 @@ export default function App() {
     }
   };
 
+  const handleRefresh = () => {
+    if (!currentProjectId) return;
+    
+    const projects = getAllProjects();
+    const project = projects.find(p => p.metadata.id === currentProjectId);
+    
+    if (project) {
+      setData(project.data);
+      console.log('Project refreshed from storage');
+    }
+  };
+
   // Live Sync Polling
   useEffect(() => {
     if (!fileHandle) return;
@@ -178,7 +190,7 @@ export default function App() {
 
     const intervalId = setInterval(checkFile, 1000);
     return () => clearInterval(intervalId);
-  }, [fileHandle]);
+  }, [fileHandle, currentProjectId]);
 
   return (
     <ThemeProvider>
@@ -195,6 +207,7 @@ export default function App() {
               onDeleteProject={handleDeleteProject}
               onAddNewProject={handleAddNewProject}
               onRenameProject={handleRenameProject}
+              onRefresh={handleRefresh}
               currentProjectId={currentProjectId}
               availableProjects={availableProjects}
               isSyncing={!!fileHandle}
