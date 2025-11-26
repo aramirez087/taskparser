@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { RootData } from './types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { RootData, TagData } from './types';
 import { Landing } from './components/Landing';
 import { Dashboard } from './components/Dashboard';
 import { AnimatePresence } from 'framer-motion';
@@ -22,7 +22,30 @@ export default function App() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [availableProjects, setAvailableProjects] = useState<ProjectMetadata[]>([]);
+  const [currentTag, setCurrentTag] = useState<string>('master');
   const lastModRef = useRef<number>(0);
+
+  // Extract available tags from current data
+  const availableTags = useMemo(() => {
+    if (!data) return ['master'];
+    return Object.keys(data).filter(key => {
+      if (key === 'fileName') return false;
+      const value = data[key];
+      // Check if it's a valid tag (has tasks array)
+      return value && typeof value === 'object' && 'tasks' in value && Array.isArray((value as TagData).tasks);
+    });
+  }, [data]);
+
+  // Get current tag data
+  const currentTagData = useMemo(() => {
+    if (!data) return null;
+    const tagData = data[currentTag];
+    if (tagData && typeof tagData === 'object' && 'tasks' in tagData) {
+      return tagData as TagData;
+    }
+    // Fallback to master if current tag doesn't exist
+    return data.master;
+  }, [data, currentTag]);
 
   // Load projects from localStorage on mount
   useEffect(() => {
@@ -36,6 +59,8 @@ export default function App() {
       if (lastProject) {
         setData(lastProject.data);
         setCurrentProjectId(lastProjectId);
+        // Reset to master tag when loading a project
+        setCurrentTag('master');
       }
     }
   }, []);
@@ -69,6 +94,8 @@ export default function App() {
     setFileHandle(handle);
     setSyncError(null);
     setCurrentProjectId(metadata.id);
+    // Reset to master tag when loading new data
+    setCurrentTag('master');
     
     // Refresh available projects list
     const projects = getAllProjects();
@@ -86,6 +113,7 @@ export default function App() {
     setFileHandle(null);
     setSyncError(null);
     setCurrentProjectId(null);
+    setCurrentTag('master');
   };
 
   const handleSwitchProject = (projectId: string) => {
@@ -99,6 +127,7 @@ export default function App() {
       setFileHandle(null); // Clear file handle when switching
       setSyncError(null);
       lastModRef.current = 0;
+      setCurrentTag('master'); // Reset to master when switching projects
     }
   };
 
@@ -120,6 +149,13 @@ export default function App() {
     setFileHandle(null);
     setSyncError(null);
     setCurrentProjectId(null);
+    setCurrentTag('master');
+  };
+
+  const handleSwitchTag = (tagName: string) => {
+    if (availableTags.includes(tagName)) {
+      setCurrentTag(tagName);
+    }
   };
 
   const handleRenameProject = (projectId: string, newName: string) => {
@@ -202,14 +238,18 @@ export default function App() {
             <Dashboard 
               key="dashboard" 
               data={data} 
+              currentTagData={currentTagData}
               onReset={handleReset}
               onSwitchProject={handleSwitchProject}
               onDeleteProject={handleDeleteProject}
               onAddNewProject={handleAddNewProject}
               onRenameProject={handleRenameProject}
               onRefresh={handleRefresh}
+              onSwitchTag={handleSwitchTag}
               currentProjectId={currentProjectId}
               availableProjects={availableProjects}
+              currentTag={currentTag}
+              availableTags={availableTags}
               isSyncing={!!fileHandle}
               syncError={syncError}
             />

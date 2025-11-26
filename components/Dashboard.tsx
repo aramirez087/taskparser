@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { RootData, Task } from '../types';
+import { RootData, Task, TagData } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List, FolderOpen, ChevronDown, Plus, Trash2, Minimize2, Maximize2 } from 'lucide-react';
+import { LayoutDashboard, Share2, Activity, CheckCircle2, Clock, AlertTriangle, FileText, RefreshCw, AlertCircle, Table as TableIcon, Network, List, FolderOpen, ChevronDown, Plus, Trash2, Minimize2, Maximize2, GitBranch, Tag } from 'lucide-react';
 import { ProjectMetadata } from '../utils/projectManager';
 import { TaskList } from './TaskList';
 import { DependencyGraph } from './DependencyGraph';
@@ -13,14 +13,18 @@ import { ProjectNameEditor } from './ProjectNameEditor';
 
 interface DashboardProps {
   data: RootData;
+  currentTagData: TagData | null;
   onReset: () => void;
   onSwitchProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
   onAddNewProject: () => void;
   onRenameProject: (projectId: string, newName: string) => void;
   onRefresh?: () => void;
+  onSwitchTag: (tagName: string) => void;
   currentProjectId: string | null;
   availableProjects: ProjectMetadata[];
+  currentTag: string;
+  availableTags: string[];
   isSyncing?: boolean;
   syncError?: string | null;
 }
@@ -29,14 +33,18 @@ type ViewMode = 'list' | 'graph' | 'table';
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   data, 
+  currentTagData,
   onReset, 
   onSwitchProject, 
   onDeleteProject, 
   onAddNewProject, 
   onRenameProject, 
   onRefresh,
+  onSwitchTag,
   currentProjectId, 
-  availableProjects, 
+  availableProjects,
+  currentTag,
+  availableTags,
   isSyncing = false, 
   syncError 
 }) => {
@@ -68,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Filter tasks based on current filters
   const filteredTasks = useMemo(() => {
-    let tasks = data.master.tasks;
+    let tasks = currentTagData?.tasks || [];
 
     // Status filter
     if (filters.status.length > 0) {
@@ -97,7 +105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
 
     return tasks;
-  }, [data.master.tasks, filters]);
+  }, [currentTagData?.tasks, filters]);
 
   const stats = useMemo(() => {
     const allTasks = filteredTasks;
@@ -136,6 +144,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <h1 className="text-sm font-semibold text-foreground tracking-tight">
                     {availableProjects.find(p => p.id === currentProjectId)?.name || "Project"}
                   </h1>
+                  {availableTags.length > 1 && (
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium">
+                      <GitBranch className="w-2.5 h-2.5" />
+                      {currentTag}
+                    </span>
+                  )}
                   {isSyncing && (
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
@@ -219,6 +233,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       ))}
                     </div>
                     
+                    {/* Tags Section */}
+                    {availableTags.length > 1 && (
+                      <div className="border-t border-border/50 mt-2 pt-2">
+                        <div className="flex items-center justify-between px-3 py-2 mb-1">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                            <GitBranch className="w-3 h-3" />
+                            Tags
+                          </span>
+                          <span className="text-xs text-muted-foreground">{availableTags.length}</span>
+                        </div>
+                        <div className="max-h-32 overflow-y-auto space-y-0.5">
+                          {availableTags.map(tag => (
+                            <button
+                              key={tag}
+                              onClick={() => {
+                                onSwitchTag(tag);
+                                setIsProjectDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                                tag === currentTag 
+                                  ? 'bg-primary/10 text-primary border border-primary/20 font-medium' 
+                                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                              }`}
+                            >
+                              <Tag className="w-3 h-3" />
+                              {tag}
+                              {tag === 'master' && (
+                                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">default</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="border-t border-border/50 mt-2 pt-2">
                       <button
                         onClick={() => {
@@ -324,7 +373,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           filters={filters}
           onFiltersChange={setFilters}
           taskCounts={{
-            total: data.master.tasks.length,
+            total: currentTagData?.tasks.length || 0,
             filtered: filteredTasks.length
           }}
         />

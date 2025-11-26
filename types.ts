@@ -33,15 +33,24 @@ export interface Task {
   acceptanceCriteria?: string;
 }
 
-export interface MasterData {
+export interface TagData {
   tasks: Task[];
   metadata: Metadata;
 }
 
+// Legacy alias for backward compatibility
+export type MasterData = TagData;
+
+// RootData can have multiple tags (master, feature branches, etc.)
+// Each key is a tag name, value is the tag's task data
 export interface RootData {
-  master: MasterData;
+  [tagName: string]: TagData | string | undefined;
+  master: TagData;
   fileName?: string;
 }
+
+// Helper type for extracting tag names from RootData
+export type TagName = Exclude<keyof RootData, 'fileName'>;
 
 export interface ParsedLogInfo {
   date: string;
