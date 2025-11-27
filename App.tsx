@@ -24,6 +24,7 @@ export default function App() {
   const [availableProjects, setAvailableProjects] = useState<ProjectMetadata[]>([]);
   const [currentTag, setCurrentTag] = useState<string>('master');
   const lastModRef = useRef<number>(0);
+  const jsonErrorCountRef = useRef<number>(0);
 
   // Extract available tags from current data
   const availableTags = useMemo(() => {
@@ -189,6 +190,9 @@ export default function App() {
   useEffect(() => {
     if (!fileHandle) return;
 
+    // Reset error count when fileHandle changes
+    jsonErrorCountRef.current = 0;
+
     const checkFile = async () => {
       try {
         const file = await fileHandle.getFile();
@@ -203,6 +207,7 @@ export default function App() {
               setData(updatedData);
               lastModRef.current = file.lastModified;
               setSyncError(null);
+              jsonErrorCountRef.current = 0; // Reset on success
               
               // Update in localStorage if we have a current project
               if (currentProjectId) {
@@ -213,13 +218,23 @@ export default function App() {
               }
             }
           } catch (e) {
-            console.warn("Live Reload: Invalid JSON", e);
-            setSyncError("File changed but JSON is invalid. Pausing updates.");
+            jsonErrorCountRef.current++;
+            console.warn(`Live Reload: Invalid JSON (attempt ${jsonErrorCountRef.current})`, e);
+            
+            // After 5 consecutive JSON errors, stop live sync
+            if (jsonErrorCountRef.current >= 5) {
+              console.error("Too many JSON errors, stopping live sync");
+              setFileHandle(null);
+              setSyncError("Live sync stopped: file structure changed significantly. Use refresh or re-open the file.");
+            } else {
+              setSyncError("File changed but JSON is temporarily invalid. Retrying...");
+            }
           }
         }
       } catch (e) {
         console.error("Error accessing file handle:", e);
-        // If we lose permission or file is gone, we might stop polling or show error
+        // Lost permission or file is gone - clear handle to show refresh button
+        setFileHandle(null);
         setSyncError("Lost access to file. Live sync stopped.");
       }
     };
